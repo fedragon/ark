@@ -1,9 +1,6 @@
 CREATE TABLE IF NOT EXISTS "media" (
-    id SERIAL PRIMARY KEY,
-    hash BLOB NOT NULL,
+    hash BLOB  PRIMARY KEY,
     path TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL,
     imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS "media_hash_idx" ON "media" (hash);

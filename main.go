@@ -2,51 +2,47 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
-	"github.com/fedragon/ark/migrations"
+	"github.com/fedragon/ark/internal/db"
+	"github.com/fedragon/ark/internal/importer"
 
-	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dialect/sqlitedialect"
-	"github.com/uptrace/bun/driver/sqliteshim"
-	"github.com/uptrace/bun/migrate"
+	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/afero"
 )
 
 const dbPath = "ark.db"
 
 func main() {
-	db, err := connect(dbPath)
+	now := time.Now()
+	var appFs = afero.NewOsFs()
+
+	repo, err := db.NewSqlite3Repository(appFs, dbPath)
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer repo.Close()
 
-	migrator := migrate.NewMigrator(db, migrations.Migrations)
-	if err := migrator.Init(context.Background()); err != nil {
-		panic(err)
-	}
-	if _, err := migrator.Migrate(context.Background()); err != nil {
-		panic(err)
-	}
-}
-
-func connect(dbPath string) (*bun.DB, error) {
-	if _, err := os.Stat(dbPath); err != nil {
-		if os.IsNotExist(err) {
-			if _, err := os.Create(dbPath); err != nil {
-				panic(err)
-			}
-		} else {
-			panic(err)
-		}
+	imp := importer.Imp{
+		Repo:      repo,
+		Fs:        appFs,
+		FileTypes: []string{".cr2", ".jpg", ".jpeg"},
 	}
 
-	sqldb, err := sql.Open(sqliteshim.ShimName, fmt.Sprintf("file:%s?cache=shared&mode=rw", dbPath))
+	source, err := homedir.Expand(os.Args[1])
 	if err != nil {
-		return nil, err
+		panic(err)
+	}
+	target, err := homedir.Expand(os.Args[2])
+	if err != nil {
+		panic(err)
 	}
 
-	return bun.NewDB(sqldb, sqlitedialect.New()), nil
+	if err := imp.Import(context.Background(), source, target); err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Elapsed time:", time.Since(now))
 }

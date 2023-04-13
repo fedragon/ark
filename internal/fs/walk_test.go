@@ -1,15 +1,17 @@
 package fs
 
 import (
-	"os"
 	"testing"
 
-	_ "github.com/fedragon/ark/testing"
+	. "github.com/fedragon/ark/testing"
+
+	"github.com/spf13/afero"
 )
 
 func TestWalk(t *testing.T) {
-	workdir, err := os.Getwd()
-	if err != nil {
+	fs := afero.NewMemMapFs()
+
+	if err := CopyTestData(fs, "/src/test/data", "doge.jpg", "same-doge.jpg", "grumpy-cat.jpg"); err != nil {
 		t.Fatalf(err.Error())
 	}
 
@@ -20,19 +22,19 @@ func TestWalk(t *testing.T) {
 	}{
 		{
 			name:     "walk returns all media in a directory",
-			root:     workdir + "/test/data",
+			root:     "/src/test/data",
 			expected: 3,
 		},
 		{
 			name:     "walk returns all media in a directory and all its subdirectories",
-			root:     workdir,
+			root:     "/src",
 			expected: 3,
 		},
 	}
 
 	for _, c := range cases {
 		var count int
-		for i := range Walk(c.root, []string{".jpg"}) {
+		for i := range Walk(fs, c.root, []string{".jpg"}) {
 			if i.Err != nil {
 				t.Errorf(i.Err.Error())
 			}
