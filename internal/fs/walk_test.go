@@ -3,18 +3,10 @@ package fs
 import (
 	"testing"
 
-	. "github.com/fedragon/ark/testing"
-
-	"github.com/spf13/afero"
+	_ "github.com/fedragon/ark/testing"
 )
 
 func TestWalk(t *testing.T) {
-	fs := afero.NewMemMapFs()
-
-	if err := CopyTestData(fs, "/src/test/data", "doge.jpg", "same-doge.jpg", "grumpy-cat.jpg"); err != nil {
-		t.Fatalf(err.Error())
-	}
-
 	cases := []struct {
 		name     string
 		root     string
@@ -22,19 +14,19 @@ func TestWalk(t *testing.T) {
 	}{
 		{
 			name:     "walk returns all media in a directory",
-			root:     "/src/test/data",
+			root:     "./test/data",
 			expected: 3,
 		},
 		{
 			name:     "walk returns all media in a directory and all its subdirectories",
-			root:     "/src",
+			root:     "./test",
 			expected: 3,
 		},
 	}
 
 	for _, c := range cases {
 		var count int
-		for i := range Walk(fs, c.root, []string{".jpg"}) {
+		for i := range Walk(c.root, []string{"jpg"}) {
 			if i.Err != nil {
 				t.Errorf(i.Err.Error())
 			}

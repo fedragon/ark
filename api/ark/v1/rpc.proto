@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package ark.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/fedragon/ark/gen/ark/v1;arkv1";
+
+service ArkApi {
+  rpc FileExists (FileExistsRequest) returns (FileExistsResponse) {};
+
+  rpc UploadFile (stream UploadFileRequest) returns (UploadFileResponse) {};
+}
+
+message FileExistsRequest {
+  bytes hash = 1;
+}
+
+message FileExistsResponse {
+  bool exists = 1;
+}
+
+message Metadata {
+  bytes hash = 1;
+  string name = 2;
+  int64 size = 3;
+
+  google.protobuf.Timestamp created_at = 10;
+}
+
+message Chunk {
+  bytes data = 1;
+  int64 size = 2;
+}
+
+message UploadFileRequest {
+  oneof file {
+    Metadata metadata = 1;
+    Chunk chunk = 2;
+  }
+}
+
+message UploadFileResponse {
+  bool success = 1;
+}

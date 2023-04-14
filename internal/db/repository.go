@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/fedragon/ark/migrations"
 
-	"github.com/spf13/afero"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
 	"github.com/uptrace/bun/driver/sqliteshim"
@@ -39,10 +39,10 @@ type sqlite3Repository struct {
 	db *bun.DB
 }
 
-func NewSqlite3Repository(fs afero.Fs, dbPath string) (Repository, error) {
-	if _, err := fs.Stat(dbPath); err != nil {
-		if err == afero.ErrFileNotFound {
-			if _, err := fs.Create(dbPath); err != nil {
+func NewSqlite3Repository(dbPath string) (Repository, error) {
+	if _, err := os.Stat(dbPath); err != nil {
+		if os.IsNotExist(err) {
+			if _, err := os.Create(dbPath); err != nil {
 				return nil, err
 			}
 		} else {

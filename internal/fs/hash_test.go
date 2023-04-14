@@ -5,18 +5,11 @@ import (
 	"reflect"
 	"testing"
 
-	. "github.com/fedragon/ark/testing"
-
-	"github.com/spf13/afero"
+	_ "github.com/fedragon/ark/testing"
 )
 
 func TestHash(t *testing.T) {
-	fs := afero.NewMemMapFs()
-
-	dest := "/src"
-	if err := CopyTestData(fs, dest, "doge.jpg", "same-doge.jpg", "grumpy-cat.jpg"); err != nil {
-		t.Fatalf(err.Error())
-	}
+	dest := "./test/data"
 
 	cases := []struct {
 		name     string
@@ -45,11 +38,11 @@ func TestHash(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		a, err := hash(fs, c.pathA)
+		a, err := hash(c.pathA)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
-		b, err := hash(fs, c.pathB)
+		b, err := hash(c.pathB)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
@@ -62,16 +55,8 @@ func TestHash(t *testing.T) {
 }
 
 func BenchmarkHash(b *testing.B) {
-	fs := afero.NewMemMapFs()
-
-	dest := "/src"
-	name := "doge.jpg"
-	if err := CopyTestData(fs, dest, name); err != nil {
-		b.Fatalf(err.Error())
-	}
-
 	for i := 0; i < b.N; i++ {
-		_, err := hash(fs, filepath.Join(dest, name))
+		_, err := hash(filepath.Join("./test/data", "doge.jpg"))
 		if err != nil {
 			b.Errorf(err.Error())
 		}

@@ -1,85 +1,108 @@
 package importer
 
 import (
+	"bufio"
 	"context"
-	"errors"
 	"fmt"
-	"github.com/spf13/afero"
+	"io"
 	"os"
-	"path/filepath"
+	"time"
 
+	arkv1 "github.com/fedragon/ark/gen/ark/v1"
+	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
 	"github.com/fedragon/ark/internal/db"
 	"github.com/fedragon/ark/internal/fs"
 
-	"github.com/natefinch/atomic"
+	connect_go "github.com/bufbuild/connect-go"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Importer interface {
-	// Import imports all files in sourceDir into targetDir, skipping duplicates
-	Import(ctx context.Context, sourceDir string, targetDir string) error
+	// Import imports all files in sourceDir, skipping duplicates
+	Import(ctx context.Context, sourceDir string) error
 }
 
 type Imp struct {
-	Repo      db.Repository
-	Fs        afero.Fs
+	Client    arkv1connect.ArkApiClient
 	FileTypes []string
 }
 
-func (imp *Imp) Import(ctx context.Context, sourceDir string, targetDir string) error {
-	for m := range fs.Walk(imp.Fs, sourceDir, imp.FileTypes) {
-		existing, err := imp.Repo.Get(ctx, m.Hash)
+func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
+	for m := range fs.Walk(sourceDir, imp.FileTypes) {
+		res, err := imp.sendMedia(ctx, m)
 		if err != nil {
 			return err
 		}
 
-		if existing == nil {
-			newPath, err := copyFile(m, targetDir)
-			if err != nil {
-				return err
-			}
-			m.Path = newPath
-
-			if err := imp.Repo.Store(ctx, m); err != nil {
-				return err
-			}
+		if res.Msg.GetSuccess() {
+			fmt.Printf("imported %s\n", m.Path)
 		} else {
-			if _, err := os.Stat(existing.Path); err != nil {
-				if !errors.Is(err, os.ErrNotExist) {
-					return err
-				}
-
-				newPath, err := copyFile(m, targetDir)
-				if err != nil {
-					return err
-				}
-				m.Path = newPath
-
-				if err := imp.Repo.Store(ctx, m); err != nil {
-					return err
-				}
-			}
+			fmt.Printf("skipped duplicate %s\n", m.Path)
 		}
 	}
 
 	return nil
 }
 
-func copyFile(m db.Media, targetDir string) (string, error) {
-	year := m.CreatedAt.Format("2006")
-	month := m.CreatedAt.Format("01")
-	day := m.CreatedAt.Format("02")
-	ymdDir := filepath.Join(targetDir, year, month, day)
-
-	if err := os.MkdirAll(ymdDir, os.ModePerm); err != nil {
-		return "", fmt.Errorf("unable to create archive subdirectory %v: %w", ymdDir, err)
-	}
-
-	data, err := os.Open(m.Path)
+func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect_go.Response[arkv1.UploadFileResponse], error) {
+	existing, err := imp.Client.FileExists(ctx, connect_go.NewRequest(&arkv1.FileExistsRequest{Hash: m.Hash}))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	defer data.Close()
 
-	newPath := filepath.Join(ymdDir, filepath.Base(m.Path))
-	return newPath, atomic.WriteFile(newPath, data)
+	if existing.Msg.GetExists() {
+		return connect_go.NewResponse(&arkv1.UploadFileResponse{Success: false}), nil
+	}
+
+	file, err := os.Open(m.Path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	stat, err := os.Stat(m.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	stream := imp.Client.UploadFile(ctx)
+	err = stream.Send(&arkv1.UploadFileRequest{
+		File: &arkv1.UploadFileRequest_Metadata{
+			Metadata: &arkv1.Metadata{
+				Hash:      m.Hash,
+				Name:      m.Path,
+				Size:      stat.Size(),
+				CreatedAt: timestamppb.New(time.Now()),
+			},
+		},
+	})
+
+	reader := bufio.NewReader(file)
+	chunk := make([]byte, 1024)
+
+	for {
+		n, err := reader.Read(chunk)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, err
+		}
+
+		err = stream.Send(&arkv1.UploadFileRequest{
+			File: &arkv1.UploadFileRequest_Chunk{
+				Chunk: &arkv1.Chunk{
+					Data: chunk,
+					Size: int64(n),
+				},
+			},
+		})
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return stream.CloseAndReceive()
 }
