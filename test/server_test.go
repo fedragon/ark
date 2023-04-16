@@ -1,6 +1,8 @@
 package test
 
-import "testing"
+import (
+	"testing"
+)
 
 type ServerTest struct {
 	Stage *ServerStage
@@ -16,26 +18,25 @@ func Test_Server_UploadFile_Succeeds(t *testing.T) {
 	s := NewServerTest(t).Stage
 
 	s.Given().
-		ServerIsUpAndRunning().And().
 		FileDoesNotExist()
 
 	s.When().
 		ClientUploadsFile()
 
 	s.Then().
-		FileExists()
+		UploadSucceeds()
 }
 
 func Test_Server_UploadFile_DiscardsDuplicate(t *testing.T) {
 	s := NewServerTest(t).Stage
 
 	s.Given().
-		ServerIsUpAndRunning().And().
+		ClientUploadsFile().And().
 		FileExists()
 
 	s.When().
 		ClientUploadsFile()
 
 	s.Then().
-		FileExists()
+		UploadIsSkipped()
 }

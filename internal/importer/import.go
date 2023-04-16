@@ -3,6 +3,7 @@ package importer
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -29,31 +30,23 @@ type Imp struct {
 
 func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 	for m := range fs.Walk(sourceDir, imp.FileTypes) {
-		res, err := imp.sendMedia(ctx, m)
-		if err != nil {
+		if _, err := imp.sendMedia(ctx, m); err != nil {
+			var cerr *connect_go.Error
+			if errors.As(err, &cerr) {
+				if cerr.Code() == connect_go.CodeAlreadyExists {
+					fmt.Printf("skipped duplicate %s\n", m.Path)
+				}
+			}
 			return err
 		}
 
-		if res.Msg.GetSuccess() {
-			fmt.Printf("imported %s\n", m.Path)
-		} else {
-			fmt.Printf("skipped duplicate %s\n", m.Path)
-		}
+		fmt.Printf("imported %s\n", m.Path)
 	}
 
 	return nil
 }
 
 func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect_go.Response[arkv1.UploadFileResponse], error) {
-	existing, err := imp.Client.FileExists(ctx, connect_go.NewRequest(&arkv1.FileExistsRequest{Hash: m.Hash}))
-	if err != nil {
-		return nil, err
-	}
-
-	if existing.Msg.GetExists() {
-		return connect_go.NewResponse(&arkv1.UploadFileResponse{Success: false}), nil
-	}
-
 	file, err := os.Open(m.Path)
 	if err != nil {
 		return nil, err

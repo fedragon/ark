@@ -25,34 +25,37 @@ type Ark struct {
 	arkv1connect.UnimplementedArkApiHandler
 }
 
-func (s *Ark) FileExists(ctx context.Context, req *connect_go.Request[arkv1.FileExistsRequest]) (*connect_go.Response[arkv1.FileExistsResponse], error) {
-	file, err := s.Repo.Get(ctx, req.Msg.Hash)
-	if err != nil {
-		return nil, connect_go.NewError(connect_go.CodeInternal, err)
-	}
-
-	return connect_go.NewResponse(&arkv1.FileExistsResponse{Exists: file != nil}), nil
-}
-
 func (s *Ark) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1.UploadFileRequest]) (*connect_go.Response[arkv1.UploadFileResponse], error) {
-	media := db.Media{}
+	media := &db.Media{}
 	totalSize := 0
 
 	next := req.Receive()
 	if !next && req.Err() != nil {
-		return nil, req.Err()
+		return nil, connect_go.NewError(connect_go.CodeInternal, req.Err())
 	}
 
 	metadata := req.Msg().GetMetadata()
-	if metadata != nil {
-		now := time.Now()
-		totalSize = int(metadata.GetSize())
-		media = db.Media{
-			Hash:       metadata.GetHash(),
-			Path:       metadata.GetName(),
-			CreatedAt:  metadata.GetCreatedAt().AsTime(),
-			ImportedAt: &now,
-		}
+
+	if metadata == nil {
+		return nil, connect_go.NewError(connect_go.CodeInvalidArgument, fmt.Errorf("expected metadata"))
+	}
+
+	media, err := s.Repo.Get(ctx, metadata.GetHash())
+	if err != nil {
+		return nil, connect_go.NewError(connect_go.CodeInternal, err)
+	}
+
+	if media != nil {
+		return nil, connect_go.NewError(connect_go.CodeAlreadyExists, fmt.Errorf("file already exists: %v", media.Path))
+	}
+
+	now := time.Now()
+	totalSize = int(metadata.GetSize())
+	media = &db.Media{
+		Hash:       metadata.GetHash(),
+		Path:       metadata.GetName(),
+		CreatedAt:  metadata.GetCreatedAt().AsTime(),
+		ImportedAt: &now,
 	}
 
 	buffer := bytes.Buffer{}
@@ -64,11 +67,11 @@ func (s *Ark) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1
 
 		n, err := buffer.Write(chunk.GetData())
 		if err != nil {
-			return nil, err
+			return nil, connect_go.NewError(connect_go.CodeInternal, err)
 		}
 
 		if chunk.GetSize() != int64(n) {
-			return nil, fmt.Errorf("chunk size mismatch: expected %v, got %v", chunk.GetSize(), n)
+			return nil, connect_go.NewError(connect_go.CodeInternal, fmt.Errorf("chunk size mismatch: expected %v, got %v", chunk.GetSize(), n))
 		}
 		size += n
 
@@ -76,31 +79,31 @@ func (s *Ark) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1
 	}
 
 	if req.Err() != nil {
-		return nil, req.Err()
+		return nil, connect_go.NewError(connect_go.CodeInternal, req.Err())
 	}
 
 	if size != totalSize {
-		return nil, fmt.Errorf("total size mismatch: expected %v, got %v", totalSize, size)
+		return nil, connect_go.NewError(connect_go.CodeInternal, fmt.Errorf("total size mismatch: expected %v, got %v", totalSize, size))
 	}
 
-	newPath, err := s.copyFile(media, s.ArchivePath, buffer)
+	newPath, err := s.copyFile(*media, buffer)
 	if err != nil {
-		return nil, err
+		return nil, connect_go.NewError(connect_go.CodeInternal, err)
 	}
 
 	media.Path = newPath
-	if err := s.Repo.Store(ctx, media); err != nil {
-		return nil, err
+	if err := s.Repo.Store(ctx, *media); err != nil {
+		return nil, connect_go.NewError(connect_go.CodeInternal, err)
 	}
 
-	return connect_go.NewResponse(&arkv1.UploadFileResponse{Success: true}), nil
+	return connect_go.NewResponse(&arkv1.UploadFileResponse{}), nil
 }
 
-func (s *Ark) copyFile(m db.Media, targetDir string, buffer bytes.Buffer) (string, error) {
+func (s *Ark) copyFile(m db.Media, buffer bytes.Buffer) (string, error) {
 	year := m.CreatedAt.Format("2006")
 	month := m.CreatedAt.Format("01")
 	day := m.CreatedAt.Format("02")
-	ymdDir := filepath.Join(targetDir, year, month, day)
+	ymdDir := filepath.Join(s.ArchivePath, year, month, day)
 
 	if err := os.MkdirAll(ymdDir, os.ModePerm); err != nil {
 		return "", fmt.Errorf("unable to create archive subdirectory %v: %w", ymdDir, err)
@@ -116,7 +119,7 @@ func (s *Ark) atomicallyWriteFile(filename string, r io.Reader) (err error) {
 		dir = "."
 	}
 
-	f, err := os.CreateTemp(dir, file)
+	f, err := os.CreateTemp("", file)
 	if err != nil {
 		return fmt.Errorf("cannot create temp file: %v", err)
 	}

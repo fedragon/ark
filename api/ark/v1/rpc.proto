@@ -7,17 +7,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/fedragon/ark/gen/ark/v1;arkv1";
 
 service ArkApi {
-  rpc FileExists (FileExistsRequest) returns (FileExistsResponse) {};
-
   rpc UploadFile (stream UploadFileRequest) returns (UploadFileResponse) {};
-}
-
-message FileExistsRequest {
-  bytes hash = 1;
-}
-
-message FileExistsResponse {
-  bool exists = 1;
 }
 
 message Metadata {
@@ -40,6 +30,4 @@ message UploadFileRequest {
   }
 }
 
-message UploadFileResponse {
-  bool success = 1;
-}
+message UploadFileResponse {}

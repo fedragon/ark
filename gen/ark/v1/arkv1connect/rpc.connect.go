@@ -33,15 +33,12 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// ArkApiFileExistsProcedure is the fully-qualified name of the ArkApi's FileExists RPC.
-	ArkApiFileExistsProcedure = "/ark.v1.ArkApi/FileExists"
 	// ArkApiUploadFileProcedure is the fully-qualified name of the ArkApi's UploadFile RPC.
 	ArkApiUploadFileProcedure = "/ark.v1.ArkApi/UploadFile"
 )
 
 // ArkApiClient is a client for the ark.v1.ArkApi service.
 type ArkApiClient interface {
-	FileExists(context.Context, *connect_go.Request[v1.FileExistsRequest]) (*connect_go.Response[v1.FileExistsResponse], error)
 	UploadFile(context.Context) *connect_go.ClientStreamForClient[v1.UploadFileRequest, v1.UploadFileResponse]
 }
 
@@ -55,11 +52,6 @@ type ArkApiClient interface {
 func NewArkApiClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) ArkApiClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &arkApiClient{
-		fileExists: connect_go.NewClient[v1.FileExistsRequest, v1.FileExistsResponse](
-			httpClient,
-			baseURL+ArkApiFileExistsProcedure,
-			opts...,
-		),
 		uploadFile: connect_go.NewClient[v1.UploadFileRequest, v1.UploadFileResponse](
 			httpClient,
 			baseURL+ArkApiUploadFileProcedure,
@@ -70,13 +62,7 @@ func NewArkApiClient(httpClient connect_go.HTTPClient, baseURL string, opts ...c
 
 // arkApiClient implements ArkApiClient.
 type arkApiClient struct {
-	fileExists *connect_go.Client[v1.FileExistsRequest, v1.FileExistsResponse]
 	uploadFile *connect_go.Client[v1.UploadFileRequest, v1.UploadFileResponse]
-}
-
-// FileExists calls ark.v1.ArkApi.FileExists.
-func (c *arkApiClient) FileExists(ctx context.Context, req *connect_go.Request[v1.FileExistsRequest]) (*connect_go.Response[v1.FileExistsResponse], error) {
-	return c.fileExists.CallUnary(ctx, req)
 }
 
 // UploadFile calls ark.v1.ArkApi.UploadFile.
@@ -86,7 +72,6 @@ func (c *arkApiClient) UploadFile(ctx context.Context) *connect_go.ClientStreamF
 
 // ArkApiHandler is an implementation of the ark.v1.ArkApi service.
 type ArkApiHandler interface {
-	FileExists(context.Context, *connect_go.Request[v1.FileExistsRequest]) (*connect_go.Response[v1.FileExistsResponse], error)
 	UploadFile(context.Context, *connect_go.ClientStream[v1.UploadFileRequest]) (*connect_go.Response[v1.UploadFileResponse], error)
 }
 
@@ -97,11 +82,6 @@ type ArkApiHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewArkApiHandler(svc ArkApiHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle(ArkApiFileExistsProcedure, connect_go.NewUnaryHandler(
-		ArkApiFileExistsProcedure,
-		svc.FileExists,
-		opts...,
-	))
 	mux.Handle(ArkApiUploadFileProcedure, connect_go.NewClientStreamHandler(
 		ArkApiUploadFileProcedure,
 		svc.UploadFile,
@@ -112,10 +92,6 @@ func NewArkApiHandler(svc ArkApiHandler, opts ...connect_go.HandlerOption) (stri
 
 // UnimplementedArkApiHandler returns CodeUnimplemented from all methods.
 type UnimplementedArkApiHandler struct{}
-
-func (UnimplementedArkApiHandler) FileExists(context.Context, *connect_go.Request[v1.FileExistsRequest]) (*connect_go.Response[v1.FileExistsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("ark.v1.ArkApi.FileExists is not implemented"))
-}
 
 func (UnimplementedArkApiHandler) UploadFile(context.Context, *connect_go.ClientStream[v1.UploadFileRequest]) (*connect_go.Response[v1.UploadFileResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("ark.v1.ArkApi.UploadFile is not implemented"))

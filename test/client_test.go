@@ -15,10 +15,6 @@ func NewClientTest(t *testing.T) *ClientTest {
 func Test_Client_UploadFile_Succeeds(t *testing.T) {
 	s := NewClientTest(t).Stage
 
-	s.Given().
-		FileDoesNotExist().And().
-		UploadFileWillSucceed()
-
 	s.When().
 		ClientUploadsFile()
 
@@ -26,16 +22,15 @@ func Test_Client_UploadFile_Succeeds(t *testing.T) {
 		ImportSucceeds()
 }
 
-func Test_Client_UploadFile_Fails(t *testing.T) {
+func Test_Client_UploadFile_IsSkipped(t *testing.T) {
 	s := NewClientTest(t).Stage
 
 	s.Given().
-		FileDoesNotExist().And().
-		UploadFileWillFail()
+		UploadFileWillBeSkipped()
 
 	s.When().
 		ClientUploadsFile()
 
 	s.Then().
-		ImportFails()
+		ImportIsSkipped()
 }
