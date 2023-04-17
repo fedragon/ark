@@ -17,7 +17,7 @@ import (
 	connect_go "github.com/bufbuild/connect-go"
 )
 
-type Ark struct {
+type Handler struct {
 	Repo        db.Repository
 	FileTypes   []string
 	ArchivePath string
@@ -25,9 +25,8 @@ type Ark struct {
 	arkv1connect.UnimplementedArkApiHandler
 }
 
-func (s *Ark) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1.UploadFileRequest]) (*connect_go.Response[arkv1.UploadFileResponse], error) {
+func (s *Handler) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1.UploadFileRequest]) (*connect_go.Response[arkv1.UploadFileResponse], error) {
 	media := &db.Media{}
-	totalSize := 0
 
 	next := req.Receive()
 	if !next && req.Err() != nil {
@@ -50,7 +49,6 @@ func (s *Ark) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1
 	}
 
 	now := time.Now()
-	totalSize = int(metadata.GetSize())
 	media = &db.Media{
 		Hash:       metadata.GetHash(),
 		Path:       metadata.GetName(),
@@ -59,7 +57,7 @@ func (s *Ark) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1
 	}
 
 	buffer := bytes.Buffer{}
-	size := 0
+	var size int64
 
 	next = req.Receive()
 	for next {
@@ -69,11 +67,7 @@ func (s *Ark) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1
 		if err != nil {
 			return nil, connect_go.NewError(connect_go.CodeInternal, err)
 		}
-
-		if chunk.GetSize() != int64(n) {
-			return nil, connect_go.NewError(connect_go.CodeInternal, fmt.Errorf("chunk size mismatch: expected %v, got %v", chunk.GetSize(), n))
-		}
-		size += n
+		size += int64(n)
 
 		next = req.Receive()
 	}
@@ -82,8 +76,8 @@ func (s *Ark) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1
 		return nil, connect_go.NewError(connect_go.CodeInternal, req.Err())
 	}
 
-	if size != totalSize {
-		return nil, connect_go.NewError(connect_go.CodeInternal, fmt.Errorf("total size mismatch: expected %v, got %v", totalSize, size))
+	if size != metadata.GetSize() {
+		return nil, connect_go.NewError(connect_go.CodeInternal, fmt.Errorf("total size mismatch: expected %v, got %v", metadata.GetSize(), size))
 	}
 
 	newPath, err := s.copyFile(*media, buffer)
@@ -99,7 +93,7 @@ func (s *Ark) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1
 	return connect_go.NewResponse(&arkv1.UploadFileResponse{}), nil
 }
 
-func (s *Ark) copyFile(m db.Media, buffer bytes.Buffer) (string, error) {
+func (s *Handler) copyFile(m db.Media, buffer bytes.Buffer) (string, error) {
 	year := m.CreatedAt.Format("2006")
 	month := m.CreatedAt.Format("01")
 	day := m.CreatedAt.Format("02")
@@ -113,7 +107,7 @@ func (s *Ark) copyFile(m db.Media, buffer bytes.Buffer) (string, error) {
 	return newPath, s.atomicallyWriteFile(newPath, bufio.NewReader(&buffer))
 }
 
-func (s *Ark) atomicallyWriteFile(filename string, r io.Reader) (err error) {
+func (s *Handler) atomicallyWriteFile(filename string, r io.Reader) (err error) {
 	dir, file := filepath.Split(filename)
 	if dir == "" {
 		dir = "."

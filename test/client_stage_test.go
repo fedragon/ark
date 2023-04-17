@@ -12,7 +12,7 @@ import (
 	"github.com/fedragon/ark/internal/importer"
 	_ "github.com/fedragon/ark/testing"
 
-	connect_go "github.com/bufbuild/connect-go"
+	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,8 +25,8 @@ type MockArkApiServer struct {
 	uploadFileError    error
 }
 
-func (maas *MockArkApiServer) UploadFile(_ context.Context, stream *connect_go.ClientStream[arkv1.UploadFileRequest]) (*connect_go.Response[arkv1.UploadFileResponse], error) {
-	return connect_go.NewResponse(maas.uploadFileResponse), maas.uploadFileError
+func (maas *MockArkApiServer) UploadFile(_ context.Context, stream *connect.ClientStream[arkv1.UploadFileRequest]) (*connect.Response[arkv1.UploadFileResponse], error) {
+	return connect.NewResponse(maas.uploadFileResponse), maas.uploadFileError
 }
 
 func (maas *MockArkApiServer) setUploadFileResponse(response *arkv1.UploadFileResponse) {
@@ -59,7 +59,11 @@ func NewClientStage(t *testing.T) *ClientStage {
 	return &ClientStage{
 		t: t,
 		imp: &importer.Imp{
-			Client:    arkv1connect.NewArkApiClient(http.DefaultClient, server.URL),
+			Client: arkv1connect.NewArkApiClient(
+				http.DefaultClient,
+				server.URL,
+				connect.WithSendGzip(),
+			),
 			FileTypes: types,
 		},
 		mock:   mock,
@@ -89,12 +93,12 @@ func (s *ClientStage) UploadFileWillSucceed() *ClientStage {
 }
 
 func (s *ClientStage) UploadFileWillBeSkipped() *ClientStage {
-	s.mock.setUploadFileError(connect_go.NewError(connect_go.CodeAlreadyExists, errors.New("file already exists")))
+	s.mock.setUploadFileError(connect.NewError(connect.CodeAlreadyExists, errors.New("file already exists")))
 	return s
 }
 
 func (s *ClientStage) UploadFileWillFail() *ClientStage {
-	s.mock.setUploadFileError(connect_go.NewError(connect_go.CodeInternal, errors.New("something went wrong")))
+	s.mock.setUploadFileError(connect.NewError(connect.CodeInternal, errors.New("something went wrong")))
 	return s
 }
 
@@ -109,9 +113,9 @@ func (s *ClientStage) ImportSucceeds() *ClientStage {
 }
 
 func (s *ClientStage) ImportIsSkipped() *ClientStage {
-	target := &connect_go.Error{}
+	target := &connect.Error{}
 	if assert.Error(s.t, s.importError) && assert.ErrorAs(s.t, s.importError, &target) {
-		assert.Equal(s.t, connect_go.CodeAlreadyExists, target.Code(), target.Error())
+		assert.Equal(s.t, connect.CodeAlreadyExists, target.Code(), target.Error())
 	}
 
 	return s

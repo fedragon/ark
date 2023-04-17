@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
+	"github.com/fedragon/ark/internal/auth"
 	"github.com/fedragon/ark/internal/importer"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
@@ -21,8 +23,11 @@ const (
 )
 
 type Config struct {
-	FileTypes  []string `split_words:"true" default:"cr2,orc,jpg,jpeg,mp4,mov,avi,mpg,mpeg,wmv"`
-	ServerHost string   `split_words:"true" default:"http://localhost:8080"`
+	FileTypes []string `split_words:"true" default:"cr2,orc,jpg,jpeg,mp4,mov,avi,mpg,mpeg,wmv"`
+	Server    struct {
+		Address    string `split_words:"true" default:"http://localhost:8080"`
+		SigningKey string `split_words:"true"`
+	}
 }
 
 func main() {
@@ -56,9 +61,16 @@ func main() {
 			fmt.Println("Elapsed time:", time.Since(now))
 		}()
 
+		fmt.Println("Importing files from", source, "to", cfg.Server.Address)
+
 		imp := &importer.Imp{
-			Client:    arkv1connect.NewArkApiClient(http.DefaultClient, cfg.ServerHost),
 			FileTypes: cfg.FileTypes,
+			Client: arkv1connect.NewArkApiClient(
+				http.DefaultClient,
+				cfg.Server.Address,
+				connect.WithSendGzip(),
+				connect.WithInterceptors(auth.NewInterceptor(cfg.Server.SigningKey)),
+			),
 		}
 
 		return imp.Import(context.Background(), source)

@@ -14,7 +14,7 @@ import (
 	"github.com/fedragon/ark/internal/server"
 	_ "github.com/fedragon/ark/testing"
 
-	connect_go "github.com/bufbuild/connect-go"
+	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -34,7 +34,7 @@ func NewServerStage(t *testing.T) *ServerStage {
 		t.Fatal(err.Error())
 	}
 
-	handler := &server.Ark{
+	handler := &server.Handler{
 		Repo:        repo,
 		FileTypes:   []string{"jpg"},
 		ArchivePath: "./archive",
@@ -118,18 +118,18 @@ func (s *ServerStage) UploadSucceeds() *ServerStage {
 }
 
 func (s *ServerStage) UploadIsSkipped() *ServerStage {
-	target := &connect_go.Error{}
+	target := &connect.Error{}
 	if assert.Error(s.t, s.uploadError) && assert.ErrorAs(s.t, s.uploadError, &target) {
-		assert.Equal(s.t, connect_go.CodeAlreadyExists, target.Code(), target.Error())
+		assert.Equal(s.t, connect.CodeAlreadyExists, target.Code(), target.Error())
 	}
 
 	return s
 }
 
 func (s *ServerStage) UploadFails() *ServerStage {
-	target := &connect_go.Error{}
+	target := &connect.Error{}
 	if assert.Error(s.t, s.uploadError) && assert.ErrorAs(s.t, s.uploadError, &target) {
-		assert.NotEqual(s.t, connect_go.CodeAlreadyExists, target.Code(), target.Error())
+		assert.NotEqual(s.t, connect.CodeAlreadyExists, target.Code(), target.Error())
 	}
 
 	return s

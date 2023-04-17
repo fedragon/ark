@@ -6,19 +6,24 @@ import (
 	"net/http"
 
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
+	"github.com/fedragon/ark/internal/auth"
 	"github.com/fedragon/ark/internal/db"
 	"github.com/fedragon/ark/internal/server"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/kelseyhightower/envconfig"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
 
 type Config struct {
-	DbPath        string   `split_words:"true" default:"./arkv1.db"`
-	FileTypes     []string `split_words:"true" default:"cr2,orc,jpg,jpeg,mp4,mov,avi,mpg,mpeg,wmv"`
-	ServerAddress string   `split_words:"true" default:"localhost:8080"`
-	ArchivePath   string   `split_words:"true"`
+	DbPath      string   `split_words:"true" default:"./ark.db"`
+	FileTypes   []string `split_words:"true" default:"cr2,orc,jpg,jpeg,mp4,mov,avi,mpg,mpeg,wmv"`
+	ArchivePath string   `split_words:"true"`
+	Server      struct {
+		Address    string `split_words:"true" default:"localhost:9999"`
+		SigningKey string `split_words:"true"`
+	}
 }
 
 func main() {
@@ -33,18 +38,21 @@ func main() {
 	}
 	defer repo.Close()
 
-	srv := &server.Ark{
+	handler := &server.Handler{
 		Repo:        repo,
 		FileTypes:   cfg.FileTypes,
 		ArchivePath: cfg.ArchivePath,
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(arkv1connect.NewArkApiHandler(srv))
+	mux.Handle(arkv1connect.NewArkApiHandler(
+		handler,
+		connect.WithInterceptors(auth.NewInterceptor(cfg.Server.SigningKey)),
+	))
 
-	fmt.Println("... Listening on", cfg.ServerAddress)
+	fmt.Println("... Listening on", cfg.Server.Address)
 	if err := http.ListenAndServe(
-		cfg.ServerAddress,
+		cfg.Server.Address,
 		h2c.NewHandler(mux, &http2.Server{}), // Use h2c so we can serve HTTP/2 without TLS.
 	); err != nil {
 		log.Fatal(err)

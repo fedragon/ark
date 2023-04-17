@@ -69,9 +69,15 @@ func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect_go.Response
 			},
 		},
 	})
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return stream.CloseAndReceive()
+		}
+		return nil, err
+	}
 
 	reader := bufio.NewReader(file)
-	chunk := make([]byte, 1024)
+	chunk := make([]byte, 1024*1024)
 
 	for {
 		n, err := reader.Read(chunk)
@@ -86,8 +92,7 @@ func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect_go.Response
 		err = stream.Send(&arkv1.UploadFileRequest{
 			File: &arkv1.UploadFileRequest_Chunk{
 				Chunk: &arkv1.Chunk{
-					Data: chunk,
-					Size: int64(n),
+					Data: chunk[:n],
 				},
 			},
 		})
