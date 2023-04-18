@@ -36,7 +36,6 @@ func NewServerStage(t *testing.T) *ServerStage {
 
 	handler := &server.Handler{
 		Repo:        repo,
-		FileTypes:   []string{"jpg"},
 		ArchivePath: "./archive",
 	}
 
@@ -100,7 +99,6 @@ func (s *ServerStage) ClientUploadsFile() *ServerStage {
 		File: &arkv1.UploadFileRequest_Chunk{
 			Chunk: &arkv1.Chunk{
 				Data: data,
-				Size: int64(len(data)),
 			},
 		},
 	})

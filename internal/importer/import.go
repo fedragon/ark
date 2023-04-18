@@ -14,7 +14,7 @@ import (
 	"github.com/fedragon/ark/internal/db"
 	"github.com/fedragon/ark/internal/fs"
 
-	connect_go "github.com/bufbuild/connect-go"
+	connect "github.com/bufbuild/connect-go"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -31,9 +31,9 @@ type Imp struct {
 func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 	for m := range fs.Walk(sourceDir, imp.FileTypes) {
 		if _, err := imp.sendMedia(ctx, m); err != nil {
-			var cerr *connect_go.Error
+			var cerr *connect.Error
 			if errors.As(err, &cerr) {
-				if cerr.Code() == connect_go.CodeAlreadyExists {
+				if cerr.Code() == connect.CodeAlreadyExists {
 					fmt.Printf("skipped duplicate %s\n", m.Path)
 					continue
 				}
@@ -47,7 +47,7 @@ func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 	return nil
 }
 
-func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect_go.Response[arkv1.UploadFileResponse], error) {
+func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect.Response[arkv1.UploadFileResponse], error) {
 	file, err := os.Open(m.Path)
 	if err != nil {
 		return nil, err

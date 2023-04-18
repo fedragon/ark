@@ -25,7 +25,7 @@ type MockArkApiServer struct {
 	uploadFileError    error
 }
 
-func (maas *MockArkApiServer) UploadFile(_ context.Context, stream *connect.ClientStream[arkv1.UploadFileRequest]) (*connect.Response[arkv1.UploadFileResponse], error) {
+func (maas *MockArkApiServer) UploadFile(_ context.Context, _ *connect.ClientStream[arkv1.UploadFileRequest]) (*connect.Response[arkv1.UploadFileResponse], error) {
 	return connect.NewResponse(maas.uploadFileResponse), maas.uploadFileError
 }
 

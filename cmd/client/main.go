@@ -24,17 +24,17 @@ const (
 )
 
 type Config struct {
-	FileTypes []string `split_words:"true" default:"cr2,orc,jpg,jpeg,mp4,mov,avi,mpg,mpeg,wmv"`
-	Server    struct {
-		Address    string `split_words:"true" default:"localhost:9999"`
-		Protocol   string `default:"http"`
-		SigningKey string `split_words:"true" default:"supersecret"`
+	FileTypes  []string `split_words:"true" default:"cr2,orc,jpg,jpeg,mp4,mov,avi,mpg,mpeg,wmv"`
+	SigningKey string   `split_words:"true" required:"true"`
+	Server     struct {
+		Address  string `split_words:"true" default:"localhost:9999"`
+		Protocol string `default:"http"`
 	}
 }
 
 func main() {
 	var cfg Config
-	if err := envconfig.Process("ark", &cfg); err != nil {
+	if err := envconfig.Process("ark_client", &cfg); err != nil {
 		log.Fatal(err.Error())
 	}
 
@@ -70,7 +70,7 @@ func main() {
 
 		fmt.Println("Importing files from", source, "to", serverURL.String())
 
-		interceptor, err := auth.NewInterceptor([]byte(cfg.Server.SigningKey))
+		interceptor, err := auth.NewInterceptor([]byte(cfg.SigningKey))
 		if err != nil {
 			return err
 		}

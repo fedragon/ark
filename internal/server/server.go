@@ -20,7 +20,6 @@ import (
 
 type Handler struct {
 	Repo        db.Repository
-	FileTypes   []string
 	ArchivePath string
 
 	arkv1connect.UnimplementedArkApiHandler
