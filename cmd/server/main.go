@@ -17,7 +17,6 @@ import (
 )
 
 type Config struct {
-	DbPath      string   `split_words:"true" default:"./ark.db"`
 	FileTypes   []string `split_words:"true" default:"cr2,orc,jpg,jpeg,mp4,mov,avi,mpg,mpeg,wmv"`
 	ArchivePath string   `split_words:"true"`
 	Server      struct {
@@ -32,7 +31,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	repo, err := db.NewSqlite3Repository(cfg.DbPath)
+	repo, err := db.NewSqlite3Repository(cfg.ArchivePath)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
