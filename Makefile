@@ -1,3 +1,5 @@
+build: generate build-client build-server
+
 build-client:
 	go build -o bin/client cmd/client/main.go
 

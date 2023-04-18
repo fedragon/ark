@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -25,7 +26,8 @@ const (
 type Config struct {
 	FileTypes []string `split_words:"true" default:"cr2,orc,jpg,jpeg,mp4,mov,avi,mpg,mpeg,wmv"`
 	Server    struct {
-		Address    string `split_words:"true" default:"http://localhost:8080"`
+		Address    string `split_words:"true" default:"localhost:8080"`
+		Protocol   string `default:"http"`
 		SigningKey string `split_words:"true"`
 	}
 }
@@ -61,13 +63,18 @@ func main() {
 			fmt.Println("Elapsed time:", time.Since(now))
 		}()
 
-		fmt.Println("Importing files from", source, "to", cfg.Server.Address)
+		serverURL := url.URL{
+			Scheme: cfg.Server.Protocol,
+			Host:   cfg.Server.Address,
+		}
+
+		fmt.Println("Importing files from", source, "to", serverURL.String())
 
 		imp := &importer.Imp{
 			FileTypes: cfg.FileTypes,
 			Client: arkv1connect.NewArkApiClient(
 				http.DefaultClient,
-				cfg.Server.Address,
+				serverURL.String(),
 				connect.WithSendGzip(),
 				connect.WithInterceptors(auth.NewInterceptor(cfg.Server.SigningKey)),
 			),
