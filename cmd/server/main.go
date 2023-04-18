@@ -22,7 +22,7 @@ type Config struct {
 	ArchivePath string   `split_words:"true"`
 	Server      struct {
 		Address    string `split_words:"true" default:"localhost:9999"`
-		SigningKey string `split_words:"true"`
+		SigningKey string `split_words:"true" default:"supersecret"`
 	}
 }
 
@@ -45,9 +45,13 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	interceptor, err := auth.NewInterceptor([]byte(cfg.Server.SigningKey))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	mux.Handle(arkv1connect.NewArkApiHandler(
 		handler,
-		connect.WithInterceptors(auth.NewInterceptor(cfg.Server.SigningKey)),
+		connect.WithInterceptors(interceptor),
 	))
 
 	fmt.Println("... Listening on", cfg.Server.Address)

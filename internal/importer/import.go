@@ -98,7 +98,9 @@ func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect_go.Response
 		})
 
 		if err != nil {
-			return nil, err
+			if errors.Is(err, io.EOF) {
+				return stream.CloseAndReceive()
+			}
 		}
 	}
 

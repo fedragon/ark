@@ -26,9 +26,9 @@ const (
 type Config struct {
 	FileTypes []string `split_words:"true" default:"cr2,orc,jpg,jpeg,mp4,mov,avi,mpg,mpeg,wmv"`
 	Server    struct {
-		Address    string `split_words:"true" default:"localhost:8080"`
+		Address    string `split_words:"true" default:"localhost:9999"`
 		Protocol   string `default:"http"`
-		SigningKey string `split_words:"true"`
+		SigningKey string `split_words:"true" default:"supersecret"`
 	}
 }
 
@@ -70,13 +70,17 @@ func main() {
 
 		fmt.Println("Importing files from", source, "to", serverURL.String())
 
+		interceptor, err := auth.NewInterceptor([]byte(cfg.Server.SigningKey))
+		if err != nil {
+			return err
+		}
 		imp := &importer.Imp{
 			FileTypes: cfg.FileTypes,
 			Client: arkv1connect.NewArkApiClient(
 				http.DefaultClient,
 				serverURL.String(),
 				connect.WithSendGzip(),
-				connect.WithInterceptors(auth.NewInterceptor(cfg.Server.SigningKey)),
+				connect.WithInterceptors(interceptor),
 			),
 		}
 

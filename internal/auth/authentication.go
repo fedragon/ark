@@ -18,29 +18,29 @@ const (
 var errNoToken = errors.New("no token provided")
 
 type Interceptor struct {
-	key []byte
+	key         []byte
+	signedToken string
 }
 
-func NewInterceptor(signingKey string) *Interceptor {
-	return &Interceptor{key: []byte(signingKey)}
+func NewInterceptor(signingKey []byte) (*Interceptor, error) {
+	claims := &jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+		Issuer:    tokenIssuer,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString(signingKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Interceptor{key: signingKey, signedToken: signedToken}, nil
 }
 
 func (i *Interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if req.Spec().IsClient {
-			claims := &jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
-				Issuer:    tokenIssuer,
-			}
-
-			token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-			signedToken, err := token.SignedString(i.key)
-			if err != nil {
-				fmt.Println("error signing token", err)
-				return nil, err
-			}
-
-			fmt.Println("unary token", signedToken)
+			req.Header().Set(tokenHeader, i.signedToken)
 		} else if req.Header().Get(tokenHeader) == "" {
 			tokenString := req.Header().Get(tokenHeader)
 			if tokenString == "" {
@@ -87,21 +87,7 @@ func (i *Interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 func (i *Interceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
 	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
 		conn := next(ctx, spec)
-		claims := &jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
-			Issuer:    tokenIssuer,
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		signedToken, err := token.SignedString(i.key)
-		if err != nil {
-			fmt.Println("error signing token", err)
-			return conn
-		}
-
-		fmt.Println("token", signedToken)
-
-		conn.RequestHeader().Set(tokenHeader, signedToken)
+		conn.RequestHeader().Set(tokenHeader, i.signedToken)
 
 		return conn
 	}
@@ -140,7 +126,7 @@ func (i *Interceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) co
 			return i.key, nil
 		})
 		if err != nil {
-			return err
+			return connect.NewError(connect.CodeUnauthenticated, err)
 		}
 
 		if !token.Valid {
