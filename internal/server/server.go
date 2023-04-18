@@ -26,8 +26,6 @@ type Handler struct {
 }
 
 func (s *Handler) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1.UploadFileRequest]) (*connect_go.Response[arkv1.UploadFileResponse], error) {
-	media := &db.Media{}
-
 	next := req.Receive()
 	if !next && req.Err() != nil {
 		return nil, connect_go.NewError(connect_go.CodeInternal, req.Err())

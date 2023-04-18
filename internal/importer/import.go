@@ -35,6 +35,7 @@ func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 			if errors.As(err, &cerr) {
 				if cerr.Code() == connect_go.CodeAlreadyExists {
 					fmt.Printf("skipped duplicate %s\n", m.Path)
+					continue
 				}
 			}
 			return err
