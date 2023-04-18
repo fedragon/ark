@@ -13,6 +13,7 @@ import (
 	arkv1 "github.com/fedragon/ark/gen/ark/v1"
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
 	"github.com/fedragon/ark/internal/db"
+	"github.com/fedragon/ark/internal/metrics"
 
 	connect_go "github.com/bufbuild/connect-go"
 )
@@ -26,6 +27,11 @@ type Handler struct {
 }
 
 func (s *Handler) UploadFile(ctx context.Context, req *connect_go.ClientStream[arkv1.UploadFileRequest]) (*connect_go.Response[arkv1.UploadFileResponse], error) {
+	start := time.Now()
+	defer func() {
+		metrics.UploadFileDurationMs.Observe(float64(time.Since(start).Milliseconds()))
+	}()
+
 	next := req.Receive()
 	if !next && req.Err() != nil {
 		return nil, connect_go.NewError(connect_go.CodeInternal, req.Err())
@@ -43,6 +49,7 @@ func (s *Handler) UploadFile(ctx context.Context, req *connect_go.ClientStream[a
 	}
 
 	if media != nil {
+		metrics.TotalDuplicates.Inc()
 		return nil, connect_go.NewError(connect_go.CodeAlreadyExists, fmt.Errorf("file already exists: %v", media.Path))
 	}
 
@@ -88,10 +95,16 @@ func (s *Handler) UploadFile(ctx context.Context, req *connect_go.ClientStream[a
 		return nil, connect_go.NewError(connect_go.CodeInternal, err)
 	}
 
+	metrics.TotalImported.Inc()
+
 	return connect_go.NewResponse(&arkv1.UploadFileResponse{}), nil
 }
 
 func (s *Handler) copyFile(m db.Media, buffer bytes.Buffer) (string, error) {
+	start := time.Now()
+	defer func() {
+		metrics.CopyFileDurationMs.Observe(float64(time.Since(start).Milliseconds()))
+	}()
 	year := m.CreatedAt.Format("2006")
 	month := m.CreatedAt.Format("01")
 	day := m.CreatedAt.Format("02")

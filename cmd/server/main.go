@@ -12,6 +12,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -20,7 +21,7 @@ type Config struct {
 	FileTypes   []string `split_words:"true" default:"cr2,orc,jpg,jpeg,mp4,mov,avi,mpg,mpeg,wmv"`
 	ArchivePath string   `split_words:"true"`
 	Server      struct {
-		Address    string `split_words:"true" default:"localhost:9999"`
+		Address    string `split_words:"true" default:"0.0.0.0:9999"`
 		SigningKey string `split_words:"true" default:"supersecret"`
 	}
 }
@@ -48,6 +49,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	mux.Handle("/metrics", promhttp.Handler())
 	mux.Handle(arkv1connect.NewArkApiHandler(
 		handler,
 		connect.WithInterceptors(interceptor),

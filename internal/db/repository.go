@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/fedragon/ark/internal/metrics"
 	"github.com/fedragon/ark/migrations"
 
 	"github.com/uptrace/bun"
@@ -72,6 +73,11 @@ func (r *sqlite3Repository) Close() error {
 }
 
 func (r *sqlite3Repository) Get(ctx context.Context, hash []byte) (*Media, error) {
+	now := time.Now()
+	defer func() {
+		metrics.GetDurationMs.Observe(float64(time.Since(now).Milliseconds()))
+	}()
+
 	media := make([]Media, 0)
 	err := r.db.NewRaw("SELECT * FROM ? WHERE hash = ?", bun.Ident("media"), hash).Scan(ctx, &media)
 	if err != nil {
@@ -87,6 +93,10 @@ func (r *sqlite3Repository) Get(ctx context.Context, hash []byte) (*Media, error
 
 func (r *sqlite3Repository) Store(ctx context.Context, media Media) error {
 	now := time.Now()
+	defer func() {
+		metrics.StoreDurationMs.Observe(float64(time.Since(now).Milliseconds()))
+	}()
+
 	res, err := r.db.ExecContext(
 		ctx,
 		"INSERT INTO ? (hash, path, created_at, imported_at) VALUES (?, ?, ?, ?) ON CONFLICT(hash) DO UPDATE SET path = ?, imported_at = ?",
