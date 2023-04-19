@@ -9,3 +9,8 @@ build-server:
 generate:
 	rm -r gen
 	buf generate
+
+build-server-nas: export GOOS=linux
+build-server-nas: export GOARCH=amd64
+build-server-nas:
+	go build -o bin/server cmd/server/main.go

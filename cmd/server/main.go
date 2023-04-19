@@ -1,3 +1,5 @@
+//go:build !windows
+
 package main
 
 import (
@@ -31,7 +33,12 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	dbPath, err := homedir.Expand(filepath.Join(cfg.ArchivePath, "ark.db"))
+	archivePath, err := homedir.Expand(cfg.ArchivePath)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	dbPath, err := homedir.Expand(filepath.Join(archivePath, "ark.db"))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -43,7 +50,7 @@ func main() {
 
 	handler := &server.Handler{
 		Repo:        repo,
-		ArchivePath: cfg.ArchivePath,
+		ArchivePath: archivePath,
 	}
 
 	mux := http.NewServeMux()

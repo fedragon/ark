@@ -123,7 +123,12 @@ func (s *Handler) atomicallyWriteFile(filename string, r io.Reader) (err error) 
 		dir = "."
 	}
 
-	f, err := os.CreateTemp("", file)
+	tmpDir := filepath.Join(s.ArchivePath, "tmp")
+	if err := os.MkdirAll(tmpDir, os.ModePerm); err != nil {
+		return fmt.Errorf("unable to create temporary subdirectory %v: %w", tmpDir, err)
+	}
+
+	f, err := os.CreateTemp(tmpDir, file)
 	if err != nil {
 		return fmt.Errorf("cannot create temp file: %v", err)
 	}
