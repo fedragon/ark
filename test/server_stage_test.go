@@ -29,7 +29,9 @@ type ServerStage struct {
 }
 
 func NewServerStage(t *testing.T) *ServerStage {
-	repo, err := db.NewSqlite3Repository("./ark.db")
+	addr := os.Getenv("POSTGRES_ADDRESS")
+
+	repo, err := db.NewPgRepository(addr, "ark", "ark", "ark")
 	if err != nil {
 		t.Fatal(err.Error())
 	}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
 
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
 	"github.com/fedragon/ark/internal/auth"
@@ -25,6 +24,12 @@ type Config struct {
 	ArchivePath string `split_words:"true" required:"true"`
 	SigningKey  string `split_words:"true" required:"true"`
 	Address     string `split_words:"true" default:"0.0.0.0:9999"`
+	Postgres    struct {
+		Address  string `default:"localhost:15432"`
+		User     string `required:"true"`
+		Password string `required:"true"`
+		Database string `required:"true"`
+	}
 }
 
 func main() {
@@ -38,11 +43,12 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	dbPath, err := homedir.Expand(filepath.Join(archivePath, "ark.db"))
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	repo, err := db.NewSqlite3Repository(dbPath)
+	repo, err := db.NewPgRepository(
+		cfg.Postgres.Address,
+		cfg.Postgres.User,
+		cfg.Postgres.Password,
+		cfg.Postgres.Database,
+	)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

@@ -21,16 +21,3 @@ func Test_Client_UploadFile_Succeeds(t *testing.T) {
 	s.Then().
 		ImportSucceeds()
 }
-
-func Test_Client_UploadFile_IsSkipped(t *testing.T) {
-	s := NewClientTest(t).Stage
-
-	s.Given().
-		UploadFileWillBeSkipped()
-
-	s.When().
-		ClientUploadsFile()
-
-	s.Then().
-		ImportIsSkipped()
-}

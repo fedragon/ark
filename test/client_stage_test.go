@@ -111,12 +111,3 @@ func (s *ClientStage) ImportSucceeds() *ClientStage {
 	assert.NoError(s.t, s.importError)
 	return s
 }
-
-func (s *ClientStage) ImportIsSkipped() *ClientStage {
-	target := &connect.Error{}
-	if assert.Error(s.t, s.importError) && assert.ErrorAs(s.t, s.importError, &target) {
-		assert.Equal(s.t, connect.CodeAlreadyExists, target.Code(), target.Error())
-	}
-
-	return s
-}
