@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"time"
 
 	arkv1 "github.com/fedragon/ark/gen/ark/v1"
@@ -15,6 +16,7 @@ import (
 	"github.com/fedragon/ark/internal/fs"
 
 	connect "github.com/bufbuild/connect-go"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -29,22 +31,49 @@ type Imp struct {
 }
 
 func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
-	for m := range fs.Walk(sourceDir, imp.FileTypes) {
-		if _, err := imp.sendMedia(ctx, m); err != nil {
+	group := errgroup.Group{}
+	sendOne := func(ctx context.Context, in <-chan db.Media) error {
+		for m := range in {
+			_, err := imp.sendMedia(ctx, m)
+
 			var cerr *connect.Error
-			if errors.As(err, &cerr) {
+			if err != nil {
+				if !errors.As(err, &cerr) {
+					return err
+				}
+
 				if cerr.Code() == connect.CodeAlreadyExists {
 					fmt.Printf("skipped duplicate %s\n", m.Path)
 					continue
 				}
 			}
-			return err
+
+			fmt.Printf("imported %s\n", m.Path)
 		}
 
-		fmt.Printf("imported %s\n", m.Path)
+		return nil
 	}
 
-	return nil
+	allMedia := fs.Walk(sourceDir, imp.FileTypes)
+	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+		group.Go(func() error { return sendOne(ctx, allMedia) })
+	}
+	//
+	//for m := range media {
+	//	if _, err := imp.sendMedia(ctx, m); err != nil {
+	//		var cerr *connect.Error
+	//		if errors.As(err, &cerr) {
+	//			if cerr.Code() == connect.CodeAlreadyExists {
+	//				fmt.Printf("skipped duplicate %s\n", m.Path)
+	//				continue
+	//			}
+	//		}
+	//		return err
+	//	}
+	//
+	//	fmt.Printf("imported %s\n", m.Path)
+	//}
+	return group.Wait()
 }
 
 func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect.Response[arkv1.UploadFileResponse], error) {
