@@ -58,21 +58,7 @@ func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
 		group.Go(func() error { return sendOne(ctx, allMedia) })
 	}
-	//
-	//for m := range media {
-	//	if _, err := imp.sendMedia(ctx, m); err != nil {
-	//		var cerr *connect.Error
-	//		if errors.As(err, &cerr) {
-	//			if cerr.Code() == connect.CodeAlreadyExists {
-	//				fmt.Printf("skipped duplicate %s\n", m.Path)
-	//				continue
-	//			}
-	//		}
-	//		return err
-	//	}
-	//
-	//	fmt.Printf("imported %s\n", m.Path)
-	//}
+
 	return group.Wait()
 }
 
