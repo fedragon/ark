@@ -5,17 +5,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/fedragon/ark/internal/exif"
 	"io"
 	"os"
 	"runtime"
-	"time"
 
 	arkv1 "github.com/fedragon/ark/gen/ark/v1"
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
 	"github.com/fedragon/ark/internal/db"
 	"github.com/fedragon/ark/internal/fs"
 
-	connect "github.com/bufbuild/connect-go"
+	"github.com/bufbuild/connect-go"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -69,7 +69,12 @@ func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect.Response[ar
 	}
 	defer file.Close()
 
-	stat, err := os.Stat(m.Path)
+	stat, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	createdAt, err := exif.ParseCreatedAt(m.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +86,7 @@ func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect.Response[ar
 				Hash:      m.Hash,
 				Name:      m.Path,
 				Size:      stat.Size(),
-				CreatedAt: timestamppb.New(time.Now()),
+				CreatedAt: timestamppb.New(createdAt),
 			},
 		},
 	})

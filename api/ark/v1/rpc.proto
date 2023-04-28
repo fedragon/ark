@@ -29,4 +29,6 @@ message UploadFileRequest {
   }
 }
 
-message UploadFileResponse {}
+message UploadFileResponse {
+  string details = 1;
+}
