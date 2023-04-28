@@ -117,18 +117,15 @@ func (s *Handler) copyFile(m db.Media, buffer bytes.Buffer) (string, error) {
 	return newPath, s.atomicallyWriteFile(newPath, bufio.NewReader(&buffer))
 }
 
-func (s *Handler) atomicallyWriteFile(filename string, r io.Reader) (err error) {
-	dir, file := filepath.Split(filename)
-	if dir == "" {
-		dir = "."
-	}
+func (s *Handler) atomicallyWriteFile(path string, r io.Reader) (err error) {
+	_, filename := filepath.Split(path)
 
 	tmpDir := filepath.Join(s.ArchivePath, "tmp")
 	if err := os.MkdirAll(tmpDir, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to create temporary subdirectory %v: %w", tmpDir, err)
 	}
 
-	f, err := os.CreateTemp(tmpDir, file)
+	f, err := os.CreateTemp(tmpDir, filename)
 	if err != nil {
 		return fmt.Errorf("cannot create temp file: %v", err)
 	}
@@ -150,8 +147,8 @@ func (s *Handler) atomicallyWriteFile(filename string, r io.Reader) (err error) 
 		return fmt.Errorf("can't close tempfile %q: %v", name, err)
 	}
 
-	if err := os.Rename(name, filename); err != nil {
-		return fmt.Errorf("cannot replace %q with tempfile %q: %v", filename, name, err)
+	if err := os.Rename(name, path); err != nil {
+		return fmt.Errorf("cannot replace %q with tempfile %q: %v", path, name, err)
 	}
 
 	return nil

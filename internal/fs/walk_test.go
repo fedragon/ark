@@ -14,13 +14,13 @@ func TestWalk(t *testing.T) {
 	}{
 		{
 			name:     "walk returns all media in a directory",
-			root:     "./test/data",
-			expected: 3,
+			root:     "./test/data/a",
+			expected: 1,
 		},
 		{
 			name:     "walk returns all media in a directory and all its subdirectories",
-			root:     "./test",
-			expected: 3,
+			root:     "./test/data",
+			expected: 4,
 		},
 	}
 

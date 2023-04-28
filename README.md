@@ -2,6 +2,16 @@
 
 Manages an archive of media files, identifying and skipping duplicates on import. It archives files by their creation date.
 
+## Creation date
+
+The creation date is extracted, whenever possible, from the file [EXIF](https://exiftool.org/TagNames/EXIF.html) header. When that is not possible (either because the file type is not supported or there is no EXIF data), the file modification time is used as fallback mechanism.
+
+EXIF can currently be parsed from:
+
+- TIFF-like headers (CR2, ORF, TIFF)
+- HEIC (via [go-heic-exif-extractor](https://github.com/dsoprea/go-heic-exif-extractor))
+- JPEG (via [go-jpeg-image-structure](https://github.com/dsoprea/go-jpeg-image-structure))
+
 ## Components
 
 ### Server
@@ -114,3 +124,10 @@ DB->Server: OK
 Server->Client: OK
 note left of Client: end
 ```
+
+## EXIF parsing resources
+
+- https://exiftool.org/TagNames/EXIF.html
+- http://lclevy.free.fr/cr2/
+- https://github.com/lclevy/libcraw2/blob/master/docs/cr2_poster.pdf
+- https://github.com/ImranAtBhimsoft/metadata-extractor
