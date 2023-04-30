@@ -5,17 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/fedragon/ark/internal/header"
 	"io"
 	"os"
 	"runtime"
 
+	"github.com/bufbuild/connect-go"
 	arkv1 "github.com/fedragon/ark/gen/ark/v1"
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
 	"github.com/fedragon/ark/internal/db"
 	"github.com/fedragon/ark/internal/fs"
-
-	"github.com/bufbuild/connect-go"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -74,11 +72,6 @@ func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect.Response[ar
 		return nil, err
 	}
 
-	createdAt, err := header.ParseCreatedAt(m.Path)
-	if err != nil {
-		return nil, err
-	}
-
 	stream := imp.Client.UploadFile(ctx)
 	err = stream.Send(&arkv1.UploadFileRequest{
 		File: &arkv1.UploadFileRequest_Metadata{
@@ -86,7 +79,7 @@ func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect.Response[ar
 				Hash:      m.Hash,
 				Name:      m.Path,
 				Size:      stat.Size(),
-				CreatedAt: timestamppb.New(createdAt),
+				CreatedAt: timestamppb.New(stat.ModTime()),
 			},
 		},
 	})

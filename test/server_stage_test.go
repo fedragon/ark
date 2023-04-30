@@ -80,7 +80,7 @@ func (s *ServerStage) FileExists() *ServerStage {
 }
 
 func (s *ServerStage) ClientUploadsFile() *ServerStage {
-	data, err := os.ReadFile("./test/data/doge.jpg")
+	data, err := os.ReadFile("./test/data/a/image.jpg")
 	assert.NoError(s.t, err)
 
 	stream := s.client.UploadFile(context.Background())
@@ -89,7 +89,7 @@ func (s *ServerStage) ClientUploadsFile() *ServerStage {
 		File: &arkv1.UploadFileRequest_Metadata{
 			Metadata: &arkv1.Metadata{
 				Hash:      hash,
-				Name:      "./data/doge.jpg",
+				Name:      "./test/data/a/image.jpg",
 				Size:      int64(len(data)),
 				CreatedAt: timestamppb.New(time.Now()),
 			},

@@ -1,6 +1,9 @@
 # Ark
 
 Manages an archive of media files, identifying and skipping duplicates on import. It archives files by their creation date.
+Currently in a very early stage of development.
+
+**Note:** it can only guarantee atomic file renames on UNIX filesystems.
 
 ## Creation date
 

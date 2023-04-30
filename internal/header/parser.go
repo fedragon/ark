@@ -1,23 +1,22 @@
 package header
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	exifcommon "github.com/dsoprea/go-exif/v2/common"
-	heicexif "github.com/dsoprea/go-heic-exif-extractor"
-	jpegstructure "github.com/dsoprea/go-jpeg-image-structure"
-	riimage "github.com/dsoprea/go-utility/image"
+	common "github.com/dsoprea/go-exif/v2/common"
+	heic "github.com/dsoprea/go-heic-exif-extractor"
+	jpeg "github.com/dsoprea/go-jpeg-image-structure"
+	image "github.com/dsoprea/go-utility/image"
 )
 
-var parsers = map[string]riimage.MediaParser{
-	".jpg":  jpegstructure.NewJpegMediaParser(),
-	".jpeg": jpegstructure.NewJpegMediaParser(),
-	".heic": heicexif.NewHeicExifMediaParser(),
+var parsers = map[string]image.MediaParser{
+	".jpg":  jpeg.NewJpegMediaParser(),
+	".jpeg": jpeg.NewJpegMediaParser(),
+	".heic": heic.NewHeicExifMediaParser(),
 }
 
 var tiff = map[string]struct{}{
@@ -63,16 +62,10 @@ func ParseCreatedAt(path string) (time.Time, error) {
 		}
 	}
 
-	fmt.Printf("Unknown extension '%s' or no EXIF data. Using file modification time instead.\n", ext)
-	stat, err := os.Stat(path)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return stat.ModTime(), nil
+	return time.Time{}, notFound(ext)
 }
 
-func parse(parser riimage.MediaParser, path string) (time.Time, error, bool) {
+func parse(parser image.MediaParser, path string) (time.Time, error, bool) {
 	ctx, err := parser.ParseFile(path)
 	if err != nil {
 		return time.Time{}, err, false
@@ -81,7 +74,7 @@ func parse(parser riimage.MediaParser, path string) (time.Time, error, bool) {
 	if err != nil {
 		return time.Time{}, err, false
 	}
-	exif, err := ifd.ChildWithIfdPath(exifcommon.IfdPathStandardExif)
+	exif, err := ifd.ChildWithIfdPath(common.IfdPathStandardExif)
 	if err != nil {
 		return time.Time{}, err, false
 	}
