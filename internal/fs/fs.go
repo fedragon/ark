@@ -11,7 +11,7 @@ import (
 	"lukechampine.com/blake3"
 )
 
-func hash(path string) ([]byte, error) {
+func Hash(path string) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func Walk(root string, fileTypes []string) <-chan db.Media {
 			if !f.IsDir() {
 				ext := strings.ToLower(filepath.Ext(f.Name()))
 				if _, exists := typesMap[ext]; exists {
-					bytes, err := hash(path)
+					bytes, err := Hash(path)
 					if err != nil {
 						return err
 					}

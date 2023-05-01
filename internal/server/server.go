@@ -39,7 +39,6 @@ func (s *Handler) UploadFile(ctx context.Context, req *connect.ClientStream[arkv
 	}
 
 	metadata := req.Msg().GetMetadata()
-
 	if metadata == nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("expected metadata"))
 	}

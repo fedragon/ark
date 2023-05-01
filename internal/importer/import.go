@@ -32,7 +32,7 @@ func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 	group := errgroup.Group{}
 	sendOne := func(ctx context.Context, in <-chan db.Media) error {
 		for m := range in {
-			_, err := imp.sendMedia(ctx, m)
+			_, err := imp.send(ctx, m)
 
 			var cerr *connect.Error
 			if err != nil {
@@ -60,7 +60,7 @@ func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 	return group.Wait()
 }
 
-func (imp *Imp) sendMedia(ctx context.Context, m db.Media) (*connect.Response[arkv1.UploadFileResponse], error) {
+func (imp *Imp) send(ctx context.Context, m db.Media) (*connect.Response[arkv1.UploadFileResponse], error) {
 	file, err := os.Open(m.Path)
 	if err != nil {
 		return nil, err
