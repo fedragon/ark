@@ -32,18 +32,18 @@ func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 	group := errgroup.Group{}
 	sendOne := func(ctx context.Context, in <-chan db.Media) error {
 		for m := range in {
-			_, err := imp.send(ctx, m)
+			if m.Err != nil {
+				return m.Err
+			}
 
-			var cerr *connect.Error
-			if err != nil {
-				if !errors.As(err, &cerr) {
+			if _, err := imp.send(ctx, m); err != nil {
+				var cerr *connect.Error
+				if !errors.As(err, &cerr) || cerr.Code() != connect.CodeAlreadyExists {
 					return err
 				}
 
-				if cerr.Code() == connect.CodeAlreadyExists {
-					fmt.Printf("skipped duplicate %s\n", m.Path)
-					continue
-				}
+				fmt.Printf("skipped duplicate file %s\n", m.Path)
+				continue
 			}
 
 			fmt.Printf("imported %s\n", m.Path)
