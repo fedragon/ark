@@ -4,16 +4,17 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"runtime"
 
-	"github.com/bufbuild/connect-go"
 	arkv1 "github.com/fedragon/ark/gen/ark/v1"
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
 	"github.com/fedragon/ark/internal/db"
 	"github.com/fedragon/ark/internal/fs"
+
+	"github.com/bufbuild/connect-go"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -26,6 +27,7 @@ type Importer interface {
 type Imp struct {
 	Client    arkv1connect.ArkApiClient
 	FileTypes []string
+	Logger    *zap.Logger
 }
 
 func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
@@ -42,11 +44,11 @@ func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 					return err
 				}
 
-				fmt.Printf("skipped duplicate file %s\n", m.Path)
+				imp.Logger.Info("Skipped duplicate file %s", zap.String("path", m.Path))
 				continue
 			}
 
-			fmt.Printf("imported %s\n", m.Path)
+			imp.Logger.Info("Imported file", zap.String("path", m.Path))
 		}
 
 		return nil

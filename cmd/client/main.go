@@ -4,8 +4,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -19,6 +17,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
+	"go.uber.org/zap"
 )
 
 const (
@@ -35,9 +34,12 @@ type Config struct {
 }
 
 func main() {
+	log, _ := zap.NewProduction()
+	defer log.Sync()
+
 	var cfg Config
 	if err := envconfig.Process("ark_client", &cfg); err != nil {
-		log.Fatal(err.Error())
+		log.Fatal("Unable to process config", zap.Error(err))
 	}
 
 	app := &cli.App{
@@ -62,7 +64,7 @@ func main() {
 
 		now := time.Now()
 		defer func() {
-			fmt.Println("Elapsed time:", time.Since(now))
+			log.Info("Import finished", zap.Duration("elapsed_time", time.Since(now)))
 		}()
 
 		serverURL := url.URL{
@@ -70,7 +72,7 @@ func main() {
 			Host:   cfg.Server.Address,
 		}
 
-		fmt.Println("Importing files from", source, "to", serverURL.String())
+		log.Info("Importing files", zap.String("source_path", source), zap.String("server_url", serverURL.String()))
 
 		interceptor, err := auth.NewInterceptor([]byte(cfg.SigningKey))
 		if err != nil {
@@ -84,12 +86,13 @@ func main() {
 				connect.WithSendGzip(),
 				connect.WithInterceptors(interceptor),
 			),
+			Logger: log,
 		}
 
 		return imp.Import(context.Background(), source)
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err.Error())
+		log.Fatal("unable to run application", zap.Error(err))
 	}
 }
