@@ -1,35 +1,51 @@
 # Ark
 
-Manages an archive of media files, identifying and skipping duplicates on import. It archives files by their creation date.
-Currently in a very early stage of development.
+Manages an archive of media files, identifying and skipping duplicates on import; it archives files by their creation date. Use at your own risk.
 
-**Note:** it can only guarantee atomic file renames on UNIX filesystems.
+**Note:** it can only guarantee atomic file moves on UNIX filesystems.
 
-## Creation date
+## Raison d'être
 
-The creation date is extracted, whenever possible, from the file [EXIF](https://exiftool.org/TagNames/EXIF.html) header. When that is not possible (either because the file type is not supported or there is no EXIF data), the file modification time is used as fallback mechanism.
+Over the years I have accumulated hundreds of GBs of photos and videos, stored on a multitude of removable drives. I eventually bought a home NAS and moved everything there, but there's a lot of duplication and mess because of backups taken over the years.
+
+There are of course plenty of applications that can manage an archive of media on the market, but this felt like a good case for a pet project.
+
+## Decision log
+
+- I'm going to consider a file to be the duplicate of another one if and only if hashing them yields the same result: no other attributes (e.g. file name, creation date, ...) are taken into account
+- I'm going to compute file hashes using the [go porting](https://github.com/lukechampine/blake3) of the BLAKE3 cryptographic hash function, because of its performance
+- Server and client will communicate over gRPC: this enables them to run on different machines and to leverage HTTP/2 to stream files over the network
+- Instead of vanilla gRPC, I'm going to use the [connect-go](https://github.com/bufbuild/connect-go) library, primarily to experiment with it
+- Clients will authenticate their requests using JWT tokens, leveraging connect-go's [interceptors](https://connect.build/docs/go/interceptors)
+- I'm going to report some key metrics to [Prometheus](https://prometheus.io/docs/introduction/overview/) to measure the system's performance
+- I'm going to store file metadata (e.g. path, hash, ...) in a [Postgres](https://www.postgresql.org/) database
+- I'm going to use [bun](https://bun.uptrace.dev/) to interact with the database, primarily to experiment with it
+
+## Note: Creation date
+
+The creation date is extracted, whenever possible, from the file's [EXIF](https://exiftool.org/TagNames/EXIF.html) header. When that is not possible (either because the file type is not supported or there is no EXIF data), the file modification time is used as a fallback.
 
 EXIF can currently be parsed from:
 
-- TIFF-like headers (CR2, ORF, TIFF)
-- HEIC (via [go-heic-exif-extractor](https://github.com/dsoprea/go-heic-exif-extractor))
-- JPEG (via [go-jpeg-image-structure](https://github.com/dsoprea/go-jpeg-image-structure))
+- TIFF-like headers such TIFF, CR2, and ORF (see `internal/header/tiff.go`)
+- HEIC, thanks to [go-heic-exif-extractor](https://github.com/dsoprea/go-heic-exif-extractor)
+- JPEG, thanks to [go-jpeg-image-structure](https://github.com/dsoprea/go-jpeg-image-structure)
 
 ## Components
 
 ### Server
 
-Runs on the NAS itself.
-Receives `UploadFile` requests from clients, archiving files by creation date. It identifies files by their pre-computed hash and skips any duplicates that may be submitted for upload.
+Runs on the NAS itself (or wherever you'd like to store your media).
+Receives `UploadFile` gRPC requests from clients, archiving files by creation date. It identifies files by their pre-computed hash and skips any duplicates that may be submitted for upload.
 
 ### Client
 
-May run on any machine having network access to the NAS.
-Recursively walks through a directory containing media files, computing the hash of each file conforming to the configured file types and issuing `UploadFile` requests to the server.
+May run on any machine having network access to the server.
+Recursively walks through a directory containing media files, computing the hash of each of them and issuing `UploadFile` requests to the server. It initially only sends the file metadata: the actual file content is only sent (in chunks) if the server confirms that it's not a duplicate.
 
-## Upload logic
+## How it works
 
-The diagram below describes how the Client uploads files to the Server. For brevity's sake, the diagram only shows how a single file is uploaded and errors are not displayed. Any error will short-circuit the whole flow.
+The diagram below describes how a Client uploads files to the Server. For brevity's sake, the diagram only shows how a single file is uploaded and errors are not displayed. Any error will break the circuit.
 
 ```
                          +---------+                +---------+                +-----+ +-----+
