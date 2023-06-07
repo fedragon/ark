@@ -55,7 +55,7 @@ func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 	}
 
 	allMedia := fs.Walk(sourceDir, imp.FileTypes)
-	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+	for i := 0; i < runtime.NumCPU(); i++ {
 		group.Go(func() error { return sendOne(ctx, allMedia) })
 	}
 

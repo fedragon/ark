@@ -43,7 +43,7 @@ func main() {
 	}
 
 	app := &cli.App{
-		Usage:           "a CLI to manage an archive of media files",
+		Usage:           "Imports files to the Ark server",
 		UsageText:       "ark [global options]",
 		Version:         "0.1.0",
 		HideHelpCommand: true,
