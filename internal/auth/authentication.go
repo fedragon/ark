@@ -41,45 +41,47 @@ func (i *Interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if req.Spec().IsClient {
 			req.Header().Set(tokenHeader, i.signedToken)
-		} else if req.Header().Get(tokenHeader) == "" {
-			tokenString := req.Header().Get(tokenHeader)
-			if tokenString == "" {
-				return nil, connect.NewError(connect.CodeUnauthenticated, errNoToken)
-			}
-
-			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
-				}
-
-				expiry, err := token.Claims.GetExpirationTime()
-				if err != nil {
-					return nil, connect.NewError(connect.CodeInternal, errors.New("error getting expiration time claim"))
-				}
-
-				if expiry.Before(time.Now()) {
-					return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("token expired"))
-				}
-
-				issuer, err := token.Claims.GetIssuer()
-				if err != nil {
-					return nil, connect.NewError(connect.CodeInternal, errors.New("error getting issuer claim"))
-				}
-
-				if issuer != tokenIssuer {
-					return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("invalid issuer"))
-				}
-
-				return i.key, nil
-			})
-			if err != nil {
-				return nil, err
-			}
-
-			if !token.Valid {
-				return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("invalid token"))
-			}
+			return next(ctx, req)
 		}
+
+		tokenString := req.Header().Get(tokenHeader)
+		if tokenString == "" {
+			return nil, connect.NewError(connect.CodeUnauthenticated, errNoToken)
+		}
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
+			}
+
+			expiry, err := token.Claims.GetExpirationTime()
+			if err != nil {
+				return nil, connect.NewError(connect.CodeInternal, errors.New("error getting expiration time claim"))
+			}
+
+			if expiry.Before(time.Now()) {
+				return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("token expired"))
+			}
+
+			issuer, err := token.Claims.GetIssuer()
+			if err != nil {
+				return nil, connect.NewError(connect.CodeInternal, errors.New("error getting issuer claim"))
+			}
+
+			if issuer != tokenIssuer {
+				return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("invalid issuer"))
+			}
+
+			return i.key, nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if !token.Valid {
+			return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("invalid token"))
+		}
+
 		return next(ctx, req)
 	}
 }
