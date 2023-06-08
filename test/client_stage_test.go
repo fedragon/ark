@@ -14,6 +14,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 type MockArkApiServer struct {
@@ -65,6 +66,7 @@ func NewClientStage(t *testing.T) *ClientStage {
 				connect.WithSendGzip(),
 			),
 			FileTypes: types,
+			Logger:    zap.NewNop(),
 		},
 		mock:   mock,
 		server: server,

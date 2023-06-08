@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"github.com/fedragon/ark/internal/fs"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +11,7 @@ import (
 	arkv1 "github.com/fedragon/ark/gen/ark/v1"
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
 	"github.com/fedragon/ark/internal/db"
+	"github.com/fedragon/ark/internal/fs"
 	"github.com/fedragon/ark/internal/server"
 	_ "github.com/fedragon/ark/testing"
 
