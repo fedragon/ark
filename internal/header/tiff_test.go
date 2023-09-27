@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestParseEndianness(t *testing.T) {
@@ -105,9 +106,10 @@ func TestParseCreatedAt_CR2(t *testing.T) {
 	r, err := os.Open("../../test/data/a/image.cr2")
 	assert.NoError(t, err)
 
-	_, _, err = parseFromTiff(r)
-	if err != nil {
-		assert.NoError(t, err)
+	date, _, err := parseFromTiff(r)
+
+	if assert.NoError(t, err) {
+		assert.Equal(t, time.Date(2021, 11, 19, 12, 21, 10, 0, time.UTC), date)
 	}
 }
 
@@ -115,8 +117,9 @@ func TestParseCreatedAt_ORF(t *testing.T) {
 	r, err := os.Open("../../test/data/a/image.orf")
 	assert.NoError(t, err)
 
-	_, _, err = parseFromTiff(r)
-	if err != nil {
-		assert.NoError(t, err)
+	date, _, err := parseFromTiff(r)
+
+	if assert.NoError(t, err) {
+		assert.Equal(t, time.Date(2016, 8, 12, 13, 32, 54, 0, time.UTC), date)
 	}
 }
