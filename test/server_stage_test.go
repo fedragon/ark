@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"github.com/redis/go-redis/v9"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -28,12 +29,10 @@ type ServerStage struct {
 }
 
 func NewServerStage(t *testing.T) *ServerStage {
-	addr := os.Getenv("POSTGRES_ADDRESS")
-
-	repo, err := db.NewPgRepository(addr, "ark", "ark", "ark")
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	client := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_ADDRESS"),
+	})
+	repo := db.NewRedisRepository(client)
 
 	handler := &server.Handler{
 		Repo:        repo,

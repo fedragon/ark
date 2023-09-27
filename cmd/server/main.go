@@ -14,6 +14,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/go-homedir"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -23,11 +24,10 @@ type Config struct {
 	ArchivePath string `split_words:"true" required:"true"`
 	SigningKey  string `split_words:"true" required:"true"`
 	Address     string `split_words:"true" default:"0.0.0.0:9999"`
-	Postgres    struct {
-		Address  string `default:"localhost:15432"`
-		User     string `required:"true"`
-		Password string `required:"true"`
-		Database string `required:"true"`
+	Redis       struct {
+		Address  string `default:"localhost:6379"`
+		Password string `default:""`
+		Database int    `default:"0"`
 	}
 }
 
@@ -45,15 +45,12 @@ func main() {
 		log.Fatal("Unable to expand home dir", zap.Error(err))
 	}
 
-	repo, err := db.NewPgRepository(
-		cfg.Postgres.Address,
-		cfg.Postgres.User,
-		cfg.Postgres.Password,
-		cfg.Postgres.Database,
-	)
-	if err != nil {
-		log.Fatal("Unable to initialize repository", zap.Error(err))
-	}
+	client := redis.NewClient(&redis.Options{
+		Addr:     cfg.Redis.Address,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.Database,
+	})
+	repo := db.NewRedisRepository(client)
 	defer repo.Close()
 
 	handler := &server.Handler{

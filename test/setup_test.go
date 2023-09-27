@@ -16,19 +16,11 @@ func TestMain(m *testing.M) {
 	fmt.Println("Setting up test environment...")
 
 	ctx := context.Background()
-	natPort := "5432/tcp"
+	natPort := "6379/tcp"
 	req := testcontainers.ContainerRequest{
-		Image:        "postgres:15-alpine",
+		Image:        "redis:7.2-alpine",
 		ExposedPorts: []string{natPort},
-		Env: map[string]string{
-			"POSTGRES_USER":     "ark",
-			"POSTGRES_PASSWORD": "ark",
-			"POSTGRES_DATABASE": "ark",
-		},
-		WaitingFor: wait.ForAll(
-			wait.ForLog("database system is ready to accept connections"),
-			wait.ForListeningPort(nat.Port(natPort)),
-		),
+		WaitingFor:   wait.ForListeningPort(nat.Port(natPort)),
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -52,7 +44,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	_ = os.Setenv("POSTGRES_ADDRESS", fmt.Sprintf("%s:%d", ip, port.Int()))
+	_ = os.Setenv("REDIS_ADDRESS", fmt.Sprintf("%s:%d", ip, port.Int()))
 
 	code := m.Run()
 

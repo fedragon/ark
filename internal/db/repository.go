@@ -3,18 +3,14 @@ package db
 import (
 	"context"
 	"time"
-
-	"github.com/uptrace/bun"
 )
 
 type Media struct {
-	bun.BaseModel `bun:"table:media"`
-
-	Hash       []byte     `bun:",pk" json:"hash"`
+	Hash       []byte     `json:"hash"`
 	Path       string     `json:"path"`
 	CreatedAt  time.Time  `json:"created_at"`
 	ImportedAt *time.Time `json:"imported_at,omitempty"`
-	Err        error      `bun:"-" json:"-"`
+	Err        error      `json:"-"`
 }
 
 type Repository interface {

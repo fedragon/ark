@@ -18,8 +18,7 @@ There are of course plenty of applications on the market that can manage an arch
 - Instead of vanilla gRPC, I'm going to use the [connect-go](https://github.com/bufbuild/connect-go) library, primarily to experiment with it
 - Clients will authenticate their requests using JWT tokens, leveraging connect-go's [interceptors](https://connect.build/docs/go/interceptors)
 - I'm going to report some key metrics to [Prometheus](https://prometheus.io/docs/introduction/overview/) to measure the system's performance
-- I'm going to store file metadata (e.g. path, hash, ...) in a [Postgres](https://www.postgresql.org/) database
-- I'm going to use [bun](https://bun.uptrace.dev/) to interact with the database, primarily to experiment with it
+- I'm going to store file metadata (e.g. path, hash, ...) in a [Redis](https://redis.io/) database
 
 ## Note: Creation date
 
