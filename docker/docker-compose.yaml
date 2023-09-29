@@ -1,0 +1,68 @@
+version: "3.9"
+name: ark
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    volumes:
+      - $PROMETHEUS_CONFIG_PATH:/etc/prometheus/prometheus.yml
+      - $PROMETHEUS_DATA_PATH:/prometheus
+    ports:
+      - "$PROMETHEUS_HOST_PORT:9090"
+
+  redis:
+    image: redis:7.2.1
+    volumes:
+      - $REDIS_DATA_PATH:/data
+    entrypoint:
+      - redis-server
+      - --save 30 1
+    ports:
+      - "$REDIS_HOST_PORT:6379"
+
+  server:
+#    image: fedragon/ark:latest
+    build:
+      context: ..
+    ports:
+      - "$ARK_HOST_PORT:9999"
+    volumes:
+      - ark_data:/ark
+    environment:
+      ARK_SERVER_ADDRESS: "0.0.0.0:9999"
+      ARK_SERVER_ARCHIVE_PATH: /ark
+      ARK_SERVER_REDIS_ADDRESS: "redis:6379"
+      ARK_SERVER_REDIS_DATABASE: 0
+    secrets:
+      - server
+    entrypoint:
+      - bin/sh
+      - -c
+      - 'source /run/secrets/server && /bin/server'
+    depends_on:
+      - prometheus
+      - redis
+
+secrets:
+  server:
+    file: ./secrets/server
+
+volumes:
+  ark_data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '$ARK_ARCHIVE_PATH'
+  prometheus_data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '$PROMETHEUS_DATA_PATH'
+  redis_data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '$REDIS_DATA_PATH'

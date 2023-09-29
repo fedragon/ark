@@ -7,4 +7,4 @@ scrape_configs:
     tls_config:
       insecure_skip_verify: true
     static_configs:
-      - targets: [ '192.168.1.90:9999' ]
+      - targets: [ 'ark:9999' ]
