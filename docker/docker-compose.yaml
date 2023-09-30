@@ -5,27 +5,25 @@ services:
   prometheus:
     image: prom/prometheus:v2.47.0
     volumes:
-      - $PROMETHEUS_CONFIG_PATH:/etc/prometheus/prometheus.yml
-      - $PROMETHEUS_DATA_PATH:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     ports:
-      - "$PROMETHEUS_HOST_PORT:9090"
+      - "9090:9090"
 
   redis:
     image: redis:7.2.1
     volumes:
-      - $REDIS_DATA_PATH:/data
+      - redis_data:/data
     entrypoint:
       - redis-server
       - --save 30 1
     ports:
-      - "$REDIS_HOST_PORT:6379"
+      - "6379:6379"
 
   server:
-#    image: fedragon/ark:latest
-    build:
-      context: ..
+    image: ghcr.io/fedragon/ark:v1.0.0-rc1
     ports:
-      - "$ARK_HOST_PORT:9999"
+      - "9999:9999"
     volumes:
       - ark_data:/ark
     environment:
@@ -53,16 +51,16 @@ volumes:
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: '$ARK_ARCHIVE_PATH'
+      device: './data/archive'
   prometheus_data:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: '$PROMETHEUS_DATA_PATH'
+      device: './data/prometheus'
   redis_data:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: '$REDIS_DATA_PATH'
+      device: './data/redis'
