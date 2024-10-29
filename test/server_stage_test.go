@@ -2,12 +2,13 @@ package test
 
 import (
 	"context"
-	"github.com/redis/go-redis/v9"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 
 	arkv1 "github.com/fedragon/ark/gen/ark/v1"
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
@@ -86,7 +87,7 @@ func (s *ServerStage) ClientUploadsFile(path string) *ServerStage {
 
 	stream := s.client.UploadFile(context.Background())
 
-	_ = stream.Send(&arkv1.UploadFileRequest{
+	err = stream.Send(&arkv1.UploadFileRequest{
 		File: &arkv1.UploadFileRequest_Metadata{
 			Metadata: &arkv1.Metadata{
 				Hash:      hash,
@@ -96,14 +97,16 @@ func (s *ServerStage) ClientUploadsFile(path string) *ServerStage {
 			},
 		},
 	})
+	assert.NoError(s.t, err)
 
-	_ = stream.Send(&arkv1.UploadFileRequest{
+	err = stream.Send(&arkv1.UploadFileRequest{
 		File: &arkv1.UploadFileRequest_Chunk{
 			Chunk: &arkv1.Chunk{
 				Data: data,
 			},
 		},
 	})
+	assert.NoError(s.t, err)
 	_, s.uploadError = stream.CloseAndReceive()
 
 	return s
@@ -117,7 +120,7 @@ func (s *ServerStage) ClientUploadsFileAgain(path string) *ServerStage {
 	assert.NoError(s.t, err)
 
 	stream := s.client.UploadFile(context.Background())
-	_ = stream.Send(&arkv1.UploadFileRequest{
+	err = stream.Send(&arkv1.UploadFileRequest{
 		File: &arkv1.UploadFileRequest_Metadata{
 			Metadata: &arkv1.Metadata{
 				Hash:      hash,
@@ -127,6 +130,7 @@ func (s *ServerStage) ClientUploadsFileAgain(path string) *ServerStage {
 			},
 		},
 	})
+	assert.NoError(s.t, err)
 	_, s.uploadError = stream.CloseAndReceive()
 
 	return s
