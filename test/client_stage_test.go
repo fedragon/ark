@@ -105,7 +105,7 @@ func (s *ClientStage) UploadFileWillFail() *ClientStage {
 }
 
 func (s *ClientStage) ClientUploadsFile() *ClientStage {
-	s.importError = s.imp.Import(context.Background(), "./test/data/doge.jpg")
+	s.importError = s.imp.Import(context.Background(), "./testdata/doge.jpg")
 	return s
 }
 

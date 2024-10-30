@@ -2,6 +2,8 @@ package test
 
 import (
 	"testing"
+
+	_ "github.com/fedragon/ark/testing"
 )
 
 type ServerTest struct {
@@ -21,7 +23,7 @@ func Test_Server_UploadHeicFile_Succeeds(t *testing.T) {
 		FileDoesNotExist()
 
 	s.When().
-		ClientUploadsFile("./test/data/a/image.heic")
+		ClientUploadsFile("./testdata/a/image.heic")
 
 	s.Then().
 		UploadSucceeds()
@@ -31,11 +33,11 @@ func Test_Server_UploadHeicFile_DiscardsDuplicate(t *testing.T) {
 	s := NewServerTest(t).Stage
 
 	s.Given().
-		ClientUploadsFile("./test/data/a/image.heic").And().
+		ClientUploadsFile("./testdata/a/image.heic").And().
 		FileExists()
 
 	s.When().
-		ClientUploadsFileAgain("./test/data/a/image.heic")
+		ClientUploadsFileAgain("./testdata/a/image.heic")
 
 	s.Then().
 		UploadIsSkipped()
@@ -48,7 +50,7 @@ func Test_Server_UploadJpgFile_Succeeds(t *testing.T) {
 		FileDoesNotExist()
 
 	s.When().
-		ClientUploadsFile("./test/data/a/image.jpg")
+		ClientUploadsFile("./testdata/a/image.jpg")
 
 	s.Then().
 		UploadSucceeds()
@@ -58,11 +60,11 @@ func Test_Server_UploadJpgFile_DiscardsDuplicate(t *testing.T) {
 	s := NewServerTest(t).Stage
 
 	s.Given().
-		ClientUploadsFile("./test/data/a/image.jpg").And().
+		ClientUploadsFile("./testdata/a/image.jpg").And().
 		FileExists()
 
 	s.When().
-		ClientUploadsFileAgain("./test/data/a/image.jpg")
+		ClientUploadsFileAgain("./testdata/a/image.jpg")
 
 	s.Then().
 		UploadIsSkipped()
@@ -75,7 +77,7 @@ func Test_Server_UploadOrfFile_Succeeds(t *testing.T) {
 		FileDoesNotExist()
 
 	s.When().
-		ClientUploadsFile("./test/data/a/image.orf")
+		ClientUploadsFile("./testdata/a/image.orf")
 
 	s.Then().
 		UploadSucceeds()
@@ -85,11 +87,11 @@ func Test_Server_UploadOrfFile_DiscardsDuplicate(t *testing.T) {
 	s := NewServerTest(t).Stage
 
 	s.Given().
-		ClientUploadsFile("./test/data/a/image.orf").And().
+		ClientUploadsFile("./testdata/a/image.orf").And().
 		FileExists()
 
 	s.When().
-		ClientUploadsFileAgain("./test/data/a/image.orf")
+		ClientUploadsFileAgain("./testdata/a/image.orf")
 
 	s.Then().
 		UploadIsSkipped()
