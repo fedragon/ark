@@ -11,6 +11,7 @@ import (
 	heic "github.com/dsoprea/go-heic-exif-extractor"
 	jpeg "github.com/dsoprea/go-jpeg-image-structure"
 	image "github.com/dsoprea/go-utility/image"
+	"github.com/fedragon/tiff-parser/tiff"
 )
 
 var parsers = map[string]image.MediaParser{
@@ -19,7 +20,7 @@ var parsers = map[string]image.MediaParser{
 	".heic": heic.NewHeicExifMediaParser(),
 }
 
-var tiff = map[string]struct{}{
+var tiffs = map[string]struct{}{
 	".cr2":  {},
 	".orf":  {},
 	".tiff": {},
@@ -44,21 +45,29 @@ func ParseCreatedAt(path string) (time.Time, error) {
 		return createdAt, nil
 	}
 
-	if _, ok := tiff[ext]; ok {
+	if _, ok := tiffs[ext]; ok {
 		var reader io.ReadSeekCloser
 		reader, err = os.Open(path)
 		if err != nil {
 			return time.Time{}, err
 		}
 		defer reader.Close()
-		createdAt, done, err = parseFromTiff(reader)
 
-		if err != nil && err.Error() != "no exif data" {
+		parser, err := tiff.NewParser(reader)
+		if err != nil {
 			return time.Time{}, err
 		}
 
-		if done {
-			return createdAt, nil
+		entries, err := parser.Parse(tiff.DateTimeOriginal)
+		if err != nil {
+			return time.Time{}, err
+		}
+
+		if en, ok := entries[tiff.DateTimeOriginal]; ok {
+			switch en.DataType {
+			case tiff.DataType_String:
+				return time.Parse("2006:01:02 15:04:05", *en.Value.String)
+			}
 		}
 	}
 
@@ -78,7 +87,7 @@ func parse(parser image.MediaParser, path string) (time.Time, error, bool) {
 	if err != nil {
 		return time.Time{}, err, false
 	}
-	tags, err := exif.FindTagWithId(dateTimeOriginal)
+	tags, err := exif.FindTagWithId(0x9003) // dateTimeOriginal
 	if err != nil {
 		return time.Time{}, err, false
 	}
