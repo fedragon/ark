@@ -14,12 +14,12 @@ func TestWalk(t *testing.T) {
 	}{
 		{
 			name:     "walk returns all media in a directory",
-			root:     "./test/data/a",
+			root:     "./test/testdata/a",
 			expected: 1,
 		},
 		{
 			name:     "walk returns all media in a directory and all its subdirectories",
-			root:     "./test/data",
+			root:     "./test/testdata",
 			expected: 4,
 		},
 	}
@@ -28,7 +28,7 @@ func TestWalk(t *testing.T) {
 		var count int
 		for i := range Walk(c.root, []string{"jpg"}) {
 			if i.Err != nil {
-				t.Errorf(i.Err.Error())
+				t.Errorf("error: %v", i.Err.Error())
 			}
 
 			count++

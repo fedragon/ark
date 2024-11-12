@@ -23,7 +23,7 @@ func Test_Server_UploadHeicFile_Succeeds(t *testing.T) {
 		FileDoesNotExist()
 
 	s.When().
-		ClientUploadsFile("./testdata/a/image.heic")
+		ClientUploadsFile("./test/testdata/a/image.heic")
 
 	s.Then().
 		UploadSucceeds()
@@ -33,11 +33,11 @@ func Test_Server_UploadHeicFile_DiscardsDuplicate(t *testing.T) {
 	s := NewServerTest(t).Stage
 
 	s.Given().
-		ClientUploadsFile("./testdata/a/image.heic").And().
+		ClientUploadsFile("./test/testdata/a/image.heic").And().
 		FileExists()
 
 	s.When().
-		ClientUploadsFileAgain("./testdata/a/image.heic")
+		ClientUploadsFileAgain("./test/testdata/a/image.heic")
 
 	s.Then().
 		UploadIsSkipped()
@@ -50,7 +50,7 @@ func Test_Server_UploadJpgFile_Succeeds(t *testing.T) {
 		FileDoesNotExist()
 
 	s.When().
-		ClientUploadsFile("./testdata/a/image.jpg")
+		ClientUploadsFile("./test/testdata/a/image.jpg")
 
 	s.Then().
 		UploadSucceeds()
@@ -60,11 +60,11 @@ func Test_Server_UploadJpgFile_DiscardsDuplicate(t *testing.T) {
 	s := NewServerTest(t).Stage
 
 	s.Given().
-		ClientUploadsFile("./testdata/a/image.jpg").And().
+		ClientUploadsFile("./test/testdata/a/image.jpg").And().
 		FileExists()
 
 	s.When().
-		ClientUploadsFileAgain("./testdata/a/image.jpg")
+		ClientUploadsFileAgain("./test/testdata/a/image.jpg")
 
 	s.Then().
 		UploadIsSkipped()
@@ -77,7 +77,7 @@ func Test_Server_UploadOrfFile_Succeeds(t *testing.T) {
 		FileDoesNotExist()
 
 	s.When().
-		ClientUploadsFile("./testdata/a/image.orf")
+		ClientUploadsFile("./test/testdata/a/image.orf")
 
 	s.Then().
 		UploadSucceeds()
@@ -87,11 +87,11 @@ func Test_Server_UploadOrfFile_DiscardsDuplicate(t *testing.T) {
 	s := NewServerTest(t).Stage
 
 	s.Given().
-		ClientUploadsFile("./testdata/a/image.orf").And().
+		ClientUploadsFile("./test/testdata/a/image.orf").And().
 		FileExists()
 
 	s.When().
-		ClientUploadsFileAgain("./testdata/a/image.orf")
+		ClientUploadsFileAgain("./test/testdata/a/image.orf")
 
 	s.Then().
 		UploadIsSkipped()

@@ -2,13 +2,13 @@ package test
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 	"log"
 	"os"
 	"testing"
 
 	"github.com/docker/go-connections/nat"
+	_ "github.com/fedragon/ark/testing"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )

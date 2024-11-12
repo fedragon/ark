@@ -9,7 +9,7 @@ import (
 )
 
 func TestHash(t *testing.T) {
-	dest := "./test/data"
+	dest := "./test/testdata"
 
 	cases := []struct {
 		name     string

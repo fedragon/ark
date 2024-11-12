@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-
 	arkv1 "github.com/fedragon/ark/gen/ark/v1"
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
 	"github.com/fedragon/ark/internal/db"
@@ -18,6 +16,7 @@ import (
 	_ "github.com/fedragon/ark/testing"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -145,15 +144,8 @@ func (s *ServerStage) UploadIsSkipped() *ServerStage {
 	target := &connect.Error{}
 	if assert.Error(s.t, s.uploadError) && assert.ErrorAs(s.t, s.uploadError, &target) {
 		assert.Equal(s.t, connect.CodeAlreadyExists, target.Code(), target.Error())
-	}
-
-	return s
-}
-
-func (s *ServerStage) UploadFails() *ServerStage {
-	target := &connect.Error{}
-	if assert.Error(s.t, s.uploadError) && assert.ErrorAs(s.t, s.uploadError, &target) {
-		assert.NotEqual(s.t, connect.CodeAlreadyExists, target.Code(), target.Error())
+	} else {
+		s.t.FailNow()
 	}
 
 	return s
