@@ -15,7 +15,7 @@ There are of course plenty of applications on the market that can manage an arch
 - I'm going to consider a file to be the duplicate of another one if and only if hashing them yields the same result: no other attributes (e.g. file name, creation date, ...) are taken into account
 - I'm going to compute file hashes using the [go porting](https://github.com/lukechampine/blake3) of the BLAKE3 cryptographic hash function, because of its performance
 - Server and client will communicate over gRPC: this enables them to run on different machines and to leverage HTTP/2 to stream files over the network
-- Instead of vanilla gRPC, I'm going to use the [connect-go](https://connectrpc.com/connect) library, primarily to experiment with it
+- Instead of vanilla gRPC, I'm going to use the [connect-go](https://github.com/connectrpc/connect-go) library, primarily to experiment with it
 - Clients will authenticate their requests using JWT tokens, leveraging connect-go's [interceptors](https://connect.build/docs/go/interceptors)
 - I'm going to report some key metrics to [Prometheus](https://prometheus.io/docs/introduction/overview/) to measure the system's performance
 - I'm going to store file metadata (e.g. path, hash, ...) in a [Redis](https://redis.io/) database
@@ -26,9 +26,9 @@ The creation date is extracted, whenever possible, from the file's [EXIF](https:
 
 EXIF can currently be parsed from:
 
-- TIFF-like headers such TIFF, CR2, and ORF (see `internal/header/tiff.go`)
-- HEIC, thanks to [go-heic-exif-extractor](https://github.com/dsoprea/go-heic-exif-extractor)
 - JPEG, thanks to [go-jpeg-image-structure](https://github.com/dsoprea/go-jpeg-image-structure)
+- HEIC, thanks to [go-heic-exif-extractor](https://github.com/dsoprea/go-heic-exif-extractor)
+- TIFF-like headers such as TIFF, CR2, and ORF using my own [tiff-parser](https://github.com/fedragon/tiff-parser)
 
 ## Components
 
