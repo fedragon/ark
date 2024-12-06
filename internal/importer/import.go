@@ -13,7 +13,7 @@ import (
 	"github.com/fedragon/ark/internal/db"
 	"github.com/fedragon/ark/internal/fs"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"

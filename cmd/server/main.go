@@ -10,7 +10,7 @@ import (
 	"github.com/fedragon/ark/internal/db"
 	"github.com/fedragon/ark/internal/server"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/go-homedir"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

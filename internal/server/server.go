@@ -17,7 +17,7 @@ import (
 	"github.com/fedragon/ark/internal/header"
 	"github.com/fedragon/ark/internal/metrics"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 )
 
 type Handler struct {

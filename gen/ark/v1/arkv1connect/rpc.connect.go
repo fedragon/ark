@@ -5,9 +5,9 @@
 package arkv1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	connect_go "github.com/bufbuild/connect-go"
 	v1 "github.com/fedragon/ark/gen/ark/v1"
 	http "net/http"
 	strings "strings"
@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// ArkApiName is the fully-qualified name of the ArkApi service.
@@ -37,9 +37,15 @@ const (
 	ArkApiUploadFileProcedure = "/ark.v1.ArkApi/UploadFile"
 )
 
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	arkApiServiceDescriptor          = v1.File_ark_v1_rpc_proto.Services().ByName("ArkApi")
+	arkApiUploadFileMethodDescriptor = arkApiServiceDescriptor.Methods().ByName("UploadFile")
+)
+
 // ArkApiClient is a client for the ark.v1.ArkApi service.
 type ArkApiClient interface {
-	UploadFile(context.Context) *connect_go.ClientStreamForClient[v1.UploadFileRequest, v1.UploadFileResponse]
+	UploadFile(context.Context) *connect.ClientStreamForClient[v1.UploadFileRequest, v1.UploadFileResponse]
 }
 
 // NewArkApiClient constructs a client for the ark.v1.ArkApi service. By default, it uses the
@@ -49,30 +55,31 @@ type ArkApiClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewArkApiClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) ArkApiClient {
+func NewArkApiClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ArkApiClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &arkApiClient{
-		uploadFile: connect_go.NewClient[v1.UploadFileRequest, v1.UploadFileResponse](
+		uploadFile: connect.NewClient[v1.UploadFileRequest, v1.UploadFileResponse](
 			httpClient,
 			baseURL+ArkApiUploadFileProcedure,
-			opts...,
+			connect.WithSchema(arkApiUploadFileMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // arkApiClient implements ArkApiClient.
 type arkApiClient struct {
-	uploadFile *connect_go.Client[v1.UploadFileRequest, v1.UploadFileResponse]
+	uploadFile *connect.Client[v1.UploadFileRequest, v1.UploadFileResponse]
 }
 
 // UploadFile calls ark.v1.ArkApi.UploadFile.
-func (c *arkApiClient) UploadFile(ctx context.Context) *connect_go.ClientStreamForClient[v1.UploadFileRequest, v1.UploadFileResponse] {
+func (c *arkApiClient) UploadFile(ctx context.Context) *connect.ClientStreamForClient[v1.UploadFileRequest, v1.UploadFileResponse] {
 	return c.uploadFile.CallClientStream(ctx)
 }
 
 // ArkApiHandler is an implementation of the ark.v1.ArkApi service.
 type ArkApiHandler interface {
-	UploadFile(context.Context, *connect_go.ClientStream[v1.UploadFileRequest]) (*connect_go.Response[v1.UploadFileResponse], error)
+	UploadFile(context.Context, *connect.ClientStream[v1.UploadFileRequest]) (*connect.Response[v1.UploadFileResponse], error)
 }
 
 // NewArkApiHandler builds an HTTP handler from the service implementation. It returns the path on
@@ -80,11 +87,12 @@ type ArkApiHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewArkApiHandler(svc ArkApiHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	arkApiUploadFileHandler := connect_go.NewClientStreamHandler(
+func NewArkApiHandler(svc ArkApiHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	arkApiUploadFileHandler := connect.NewClientStreamHandler(
 		ArkApiUploadFileProcedure,
 		svc.UploadFile,
-		opts...,
+		connect.WithSchema(arkApiUploadFileMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/ark.v1.ArkApi/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -99,6 +107,6 @@ func NewArkApiHandler(svc ArkApiHandler, opts ...connect_go.HandlerOption) (stri
 // UnimplementedArkApiHandler returns CodeUnimplemented from all methods.
 type UnimplementedArkApiHandler struct{}
 
-func (UnimplementedArkApiHandler) UploadFile(context.Context, *connect_go.ClientStream[v1.UploadFileRequest]) (*connect_go.Response[v1.UploadFileResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("ark.v1.ArkApi.UploadFile is not implemented"))
+func (UnimplementedArkApiHandler) UploadFile(context.Context, *connect.ClientStream[v1.UploadFileRequest]) (*connect.Response[v1.UploadFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("ark.v1.ArkApi.UploadFile is not implemented"))
 }

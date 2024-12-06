@@ -15,9 +15,10 @@ import (
 	"github.com/fedragon/ark/internal/server"
 	_ "github.com/fedragon/ark/testing"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -79,10 +80,10 @@ func (s *ServerStage) FileExists() *ServerStage {
 
 func (s *ServerStage) ClientUploadsFile(path string) *ServerStage {
 	data, err := os.ReadFile(path)
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	hash, err := fs.Hash(path)
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	stream := s.client.UploadFile(context.Background())
 
@@ -96,7 +97,7 @@ func (s *ServerStage) ClientUploadsFile(path string) *ServerStage {
 			},
 		},
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	err = stream.Send(&arkv1.UploadFileRequest{
 		File: &arkv1.UploadFileRequest_Chunk{
@@ -105,7 +106,7 @@ func (s *ServerStage) ClientUploadsFile(path string) *ServerStage {
 			},
 		},
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 	_, s.uploadError = stream.CloseAndReceive()
 
 	return s
@@ -113,10 +114,10 @@ func (s *ServerStage) ClientUploadsFile(path string) *ServerStage {
 
 func (s *ServerStage) ClientUploadsFileAgain(path string) *ServerStage {
 	data, err := os.ReadFile(path)
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	hash, err := fs.Hash(path)
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	stream := s.client.UploadFile(context.Background())
 	err = stream.Send(&arkv1.UploadFileRequest{
@@ -129,21 +130,21 @@ func (s *ServerStage) ClientUploadsFileAgain(path string) *ServerStage {
 			},
 		},
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 	_, s.uploadError = stream.CloseAndReceive()
 
 	return s
 }
 
 func (s *ServerStage) UploadSucceeds() *ServerStage {
-	assert.NoError(s.t, s.uploadError)
+	require.NoError(s.t, s.uploadError)
 	return s
 }
 
 func (s *ServerStage) UploadIsSkipped() *ServerStage {
 	target := &connect.Error{}
 	if assert.Error(s.t, s.uploadError) && assert.ErrorAs(s.t, s.uploadError, &target) {
-		assert.Equal(s.t, connect.CodeAlreadyExists, target.Code(), target.Error())
+		require.Equal(s.t, connect.CodeAlreadyExists, target.Code(), target.Error())
 	} else {
 		s.t.FailNow()
 	}

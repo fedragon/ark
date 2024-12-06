@@ -13,7 +13,7 @@ import (
 	"github.com/fedragon/ark/internal/auth"
 	"github.com/fedragon/ark/internal/importer"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"

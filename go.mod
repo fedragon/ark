@@ -3,12 +3,13 @@ module github.com/fedragon/ark
 go 1.23
 
 require (
-	github.com/bufbuild/connect-go v1.10.0
+	connectrpc.com/connect v1.17.0
 	github.com/docker/go-connections v0.4.0
 	github.com/dsoprea/go-exif/v2 v2.0.0-20230826092837-6579e82b732d
 	github.com/dsoprea/go-heic-exif-extractor v0.0.0-20210512044107-62067e44c235
 	github.com/dsoprea/go-jpeg-image-structure v0.0.0-20221012074422-4f3f7e934102
 	github.com/dsoprea/go-utility v0.0.0-20221003172846-a3e1774ef349
+	github.com/fedragon/tiff-parser v0.2.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/mitchellh/go-homedir v1.1.0
@@ -43,7 +44,6 @@ require (
 	github.com/dsoprea/go-iptc v0.0.0-20200610044640-bc9ca208b413 // indirect
 	github.com/dsoprea/go-logging v0.0.0-20200710184922-b02d349568dd // indirect
 	github.com/dsoprea/go-photoshop-info-format v0.0.0-20200610045659-121dd752914d // indirect
-	github.com/fedragon/tiff-parser v0.2.0 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-xmlfmt/xmlfmt v1.1.2 // indirect

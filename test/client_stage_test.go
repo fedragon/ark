@@ -12,7 +12,7 @@ import (
 	"github.com/fedragon/ark/internal/importer"
 	_ "github.com/fedragon/ark/testing"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )

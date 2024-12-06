@@ -1,11 +1,8 @@
-version: v1
-
-managed:
-  enabled: true
+version: v2
 plugins:
-  - plugin: buf.build/protocolbuffers/go
+  - local: protoc-gen-go
     out: gen
     opt: paths=source_relative
-  - plugin: buf.build/bufbuild/connect-go
+  - local: protoc-gen-connect-go
     out: gen
     opt: paths=source_relative

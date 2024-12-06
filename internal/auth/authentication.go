@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/golang-jwt/jwt/v5"
 )
 
