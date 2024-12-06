@@ -35,6 +35,9 @@ func NewServerStage(t *testing.T) *ServerStage {
 	})
 	repo := db.NewRedisRepository(client)
 
+	// Remove all keys from Redis
+	client.FlushDB(context.Background())
+
 	handler := &server.Handler{
 		Repo:        repo,
 		ArchivePath: "./archive",
