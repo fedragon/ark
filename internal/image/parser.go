@@ -1,4 +1,4 @@
-package header
+package image
 
 import (
 	"io"
@@ -10,11 +10,11 @@ import (
 	common "github.com/dsoprea/go-exif/v2/common"
 	heic "github.com/dsoprea/go-heic-exif-extractor"
 	jpeg "github.com/dsoprea/go-jpeg-image-structure"
-	image "github.com/dsoprea/go-utility/image"
+	img "github.com/dsoprea/go-utility/image"
 	"github.com/fedragon/tiff-parser/tiff"
 )
 
-var parsers = map[string]image.MediaParser{
+var parsers = map[string]img.MediaParser{
 	".jpg":  jpeg.NewJpegMediaParser(),
 	".jpeg": jpeg.NewJpegMediaParser(),
 	".heic": heic.NewHeicExifMediaParser(),
@@ -74,7 +74,7 @@ func ParseCreatedAt(path string) (time.Time, error) {
 	return time.Time{}, notFound(ext)
 }
 
-func parse(parser image.MediaParser, path string) (time.Time, error, bool) {
+func parse(parser img.MediaParser, path string) (time.Time, error, bool) {
 	ctx, err := parser.ParseFile(path)
 	if err != nil {
 		return time.Time{}, err, false

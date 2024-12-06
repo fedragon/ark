@@ -14,7 +14,7 @@ import (
 	arkv1 "github.com/fedragon/ark/gen/ark/v1"
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
 	"github.com/fedragon/ark/internal/db"
-	"github.com/fedragon/ark/internal/header"
+	"github.com/fedragon/ark/internal/image"
 	"github.com/fedragon/ark/internal/metrics"
 
 	"connectrpc.com/connect"
@@ -112,9 +112,9 @@ func (s *Handler) copyFile(m db.Media, buffer bytes.Buffer) (string, error) {
 		return "", fmt.Errorf("unable to write temporary file: %w", err)
 	}
 
-	createdAt, err := header.ParseCreatedAt(tmpPath)
+	createdAt, err := image.ParseCreatedAt(tmpPath)
 	if err != nil {
-		if !errors.Is(err, &header.ErrNotFound{}) {
+		if !errors.Is(err, &image.ErrNotFound{}) {
 			return "", fmt.Errorf("unable to parse createdAt: %w", err)
 		}
 
