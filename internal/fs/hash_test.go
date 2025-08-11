@@ -40,11 +40,11 @@ func TestHash(t *testing.T) {
 	for _, c := range cases {
 		a, err := Hash(c.pathA)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 		b, err := Hash(c.pathB)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 
 		equal := reflect.DeepEqual(a, b)
@@ -58,7 +58,7 @@ func BenchmarkHash(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := Hash(filepath.Join("./test/data", "doge.jpg"))
 		if err != nil {
-			b.Errorf(err.Error())
+			b.Error(err.Error())
 		}
 	}
 }
