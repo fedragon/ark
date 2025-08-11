@@ -3,7 +3,11 @@
 package main
 
 import (
+	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/fedragon/ark/gen/ark/v1/arkv1connect"
 	"github.com/fedragon/ark/internal/auth"
@@ -69,9 +73,27 @@ func main() {
 		connect.WithInterceptors(interceptor),
 	))
 
+	listener, err := net.Listen("tcp", cfg.Address)
+	if err != nil {
+		log.Fatal("Unable to listen", zap.Error(err))
+	}
+
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-shutdown
+		log.Info("... Shutting down")
+		close(shutdown)
+		listener.Close()
+		repo.Close()
+		log.Sync()
+		os.Exit(0)
+	}()
+
 	log.Info("... Listening on", zap.String("address", cfg.Address))
-	if err := http.ListenAndServe(
-		cfg.Address,
+	if err := http.Serve(
+		listener,
 		h2c.NewHandler(mux, &http2.Server{}), // Use h2c so we can serve HTTP/2 without TLS.
 	); err != nil {
 		log.Fatal("Unable to start HTTP server", zap.Error(err))
