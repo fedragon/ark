@@ -59,15 +59,15 @@ func NewClientStage(t *testing.T) *ClientStage {
 
 	return &ClientStage{
 		t: t,
-		imp: &importer.Imp{
-			Client: arkv1connect.NewArkApiClient(
+		imp: importer.NewImporter(
+			arkv1connect.NewArkApiClient(
 				http.DefaultClient,
 				server.URL,
 				connect.WithSendGzip(),
 			),
-			FileTypes: types,
-			Logger:    zap.NewNop(),
-		},
+			types,
+			zap.NewNop(),
+		),
 		mock:   mock,
 		server: server,
 	}

@@ -33,7 +33,7 @@ func NewServerStage(t *testing.T) *ServerStage {
 	client := redis.NewClient(&redis.Options{
 		Addr: os.Getenv("REDIS_ADDRESS"),
 	})
-	repo := db.NewRedisRepository(client)
+	repo := db.NewRepository(client)
 
 	// Remove all keys from Redis
 	client.FlushDB(context.Background())

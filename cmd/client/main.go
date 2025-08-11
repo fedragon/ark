@@ -78,16 +78,16 @@ func main() {
 		if err != nil {
 			return err
 		}
-		imp := &importer.Imp{
-			FileTypes: cfg.FileTypes,
-			Client: arkv1connect.NewArkApiClient(
+		imp := importer.NewImporter(
+			arkv1connect.NewArkApiClient(
 				http.DefaultClient,
 				serverURL.String(),
 				connect.WithSendGzip(),
 				connect.WithInterceptors(interceptor),
 			),
-			Logger: log,
-		}
+			cfg.FileTypes,
+			log,
+		)
 
 		return imp.Import(context.Background(), source)
 	}

@@ -24,13 +24,21 @@ type Importer interface {
 	Import(ctx context.Context, sourceDir string) error
 }
 
-type Imp struct {
-	Client    arkv1connect.ArkApiClient
-	FileTypes []string
-	Logger    *zap.Logger
+type importer struct {
+	client    arkv1connect.ArkApiClient
+	fileTypes []string
+	logger    *zap.Logger
 }
 
-func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
+func NewImporter(client arkv1connect.ArkApiClient, fileTypes []string, logger *zap.Logger) *importer {
+	return &importer{
+		client:    client,
+		fileTypes: fileTypes,
+		logger:    logger,
+	}
+}
+
+func (imp *importer) Import(ctx context.Context, sourceDir string) error {
 	group := errgroup.Group{}
 	sendOne := func(ctx context.Context, in <-chan db.Media) error {
 		for m := range in {
@@ -44,17 +52,17 @@ func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 					return err
 				}
 
-				imp.Logger.Info("Skipped duplicate file %s", zap.String("path", m.Path))
+				imp.logger.Info("Skipped duplicate file %s", zap.String("path", m.Path))
 				continue
 			}
 
-			imp.Logger.Info("Imported file", zap.String("path", m.Path))
+			imp.logger.Info("Imported file", zap.String("path", m.Path))
 		}
 
 		return nil
 	}
 
-	allMedia := fs.Walk(sourceDir, imp.FileTypes)
+	allMedia := fs.Walk(sourceDir, imp.fileTypes)
 	for i := 0; i < runtime.NumCPU(); i++ {
 		group.Go(func() error { return sendOne(ctx, allMedia) })
 	}
@@ -62,7 +70,7 @@ func (imp *Imp) Import(ctx context.Context, sourceDir string) error {
 	return group.Wait()
 }
 
-func (imp *Imp) send(ctx context.Context, m db.Media) (*connect.Response[arkv1.UploadFileResponse], error) {
+func (imp *importer) send(ctx context.Context, m db.Media) (*connect.Response[arkv1.UploadFileResponse], error) {
 	file, err := os.Open(m.Path)
 	if err != nil {
 		return nil, err
@@ -74,7 +82,7 @@ func (imp *Imp) send(ctx context.Context, m db.Media) (*connect.Response[arkv1.U
 		return nil, err
 	}
 
-	stream := imp.Client.UploadFile(ctx)
+	stream := imp.client.UploadFile(ctx)
 	err = stream.Send(&arkv1.UploadFileRequest{
 		File: &arkv1.UploadFileRequest_Metadata{
 			Metadata: &arkv1.Metadata{

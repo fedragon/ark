@@ -54,7 +54,7 @@ func main() {
 		Password: cfg.Redis.Password,
 		DB:       cfg.Redis.Database,
 	})
-	repo := db.NewRedisRepository(client)
+	repo := db.NewRepository(client)
 	defer repo.Close()
 
 	handler := &server.Handler{

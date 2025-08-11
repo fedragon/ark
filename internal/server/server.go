@@ -109,7 +109,7 @@ func (s *Handler) copyFile(m db.Media, buffer bytes.Buffer) (string, error) {
 	filename := filepath.Base(m.Path)
 	tmpPath, err := s.writeFile(filename, bufio.NewReader(&buffer))
 	if err != nil {
-		return "", fmt.Errorf("unable to write temporary file: %w", err)
+		return "", fmt.Errorf("unable to write temp file: %w", err)
 	}
 
 	createdAt, err := image.ParseCreatedAt(tmpPath)
@@ -132,7 +132,7 @@ func (s *Handler) copyFile(m db.Media, buffer bytes.Buffer) (string, error) {
 
 	newPath := filepath.Join(ymdDir, filename)
 	if err := os.Rename(tmpPath, newPath); err != nil {
-		return "", fmt.Errorf("cannot replace %s with tempfile %s: %v", tmpPath, newPath, err)
+		return "", fmt.Errorf("cannot replace %s with temp file %s: %v", tmpPath, newPath, err)
 	}
 
 	return newPath, nil
@@ -157,14 +157,14 @@ func (s *Handler) writeFile(filename string, r io.Reader) (string, error) {
 	defer f.Close()
 	name := f.Name()
 	if _, err := io.Copy(f, r); err != nil {
-		return "", fmt.Errorf("cannot write data to tempfile %q: %v", name, err)
+		return "", fmt.Errorf("cannot write data to temp file %q: %v", name, err)
 	}
 	// fsync is important, otherwise os.Rename could rename a zero-length file
 	if err := f.Sync(); err != nil {
-		return "", fmt.Errorf("can't flush tempfile %q: %v", name, err)
+		return "", fmt.Errorf("cannot flush temp file %q: %v", name, err)
 	}
 	if err := f.Close(); err != nil {
-		return "", fmt.Errorf("can't close tempfile %q: %v", name, err)
+		return "", fmt.Errorf("cannot close temp file %q: %v", name, err)
 	}
 
 	return name, nil
